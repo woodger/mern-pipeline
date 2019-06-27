@@ -1,15 +1,10 @@
 # Wudger
 
-##### [DevOps](docs/devops.md)
-
 Разработка основана на микросервисной архитектуре.
 
 ![architecture](http://yuml.me/woodger/diagram/scruffy;dir:LR/class/[Nginx]<->[Web{bg:yellowgreen}],[Database]<->[MS_docs{bg:lightsteelblue}],[MS_docs]<->[Static{bg:yellow}],[Nginx]<-[Static],[Web]<->[Database{bg:palevioletred}],[Aggregator]->[Static],[Aggregator]<->[Database{bg:palevioletred}],[.env{bg:snow}]-.->[Web],[.env]-.->[Aggregator],[.env]-.->[MS_docs].svg)
 
 ## Руководство по началу работы
-
-Приложение [Node.js®](https://nodejs.org/), реализованное в соответствии со стандартом [ECMAScript® 2018 Language Specification
-](https://www.ecma-international.org/ecma-262/9.0/index.html).
 
 После клонирования репозитория создайте файл `./.env` с переменными среды.
 
