@@ -2,15 +2,16 @@
 
 Разработка основана на микросервисной архитектуре.
 
-![architecture](http://yuml.me/woodger/diagram/scruffy;dir:LR/class/[Nginx]<->[Web{bg:yellowgreen}],[Database]<->[MS_docs{bg:lightsteelblue}],[MS_docs]<->[Static{bg:yellow}],[Nginx]<-[Static],[Web]<->[Database{bg:palevioletred}],[Aggregator]->[Static],[Aggregator]<->[Database{bg:palevioletred}],[.env{bg:snow}]-.->[Web],[.env]-.->[Aggregator],[.env]-.->[MS_docs].svg)
+![yuml diagram](http://yuml.me/diagram/scruffy;dir:LR/class/[Nginx]<->[Web_application{bg:yellowgreen}],[Database]<->[.NET_hypervisor{bg:lightsteelblue}],[.NET_hypervisor]<->[CDN],[Nginx]<-[CDN],[Web_application]<->[Database],[Web_application]<->[CDN],[Inc_aggregator{bg:yellow}]->[CDN],[Inc_aggregator]<->[Database],[Web_application]<->[.NET_hypervisor],[Html_parser{bg:rosybrown}]<->[Database],[Html_parser]<->[CDN])
 
 ## Руководство по началу работы
 
-После клонирования репозитория создайте файл `./.env` с переменными среды.
+После клонирования репозитория создайте файл `./.env` с переменными окружения.
 
-Имя | Пример | Описание |
-----|--------|----------|
-`DB_URL` | mysql://user:pass@ecsc00a04d45/db | Параметры установки соединения с базой данных
+| Имя | Пример | Описание |
+|-----|--------|----------|
+| `MONGO_URL` | mongodb://user:pass@host:27017/collection | Параметры установки соединения с базой данных `Mongo`. |
+| `MONGO_ROOT_PASSWORD`          | 1a2b3c4e | Уставливает пароль `root`, который является суперпользователем. |
 
 ### Nginx
 
