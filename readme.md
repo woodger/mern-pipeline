@@ -2,16 +2,17 @@
 
 Разработка основана на микросервисной архитектуре.
 
-![yuml diagram](http://yuml.me/diagram/scruffy;dir:LR/class/[Nginx]<->[Web_application{bg:yellowgreen}],[Database]<->[.NET_hypervisor{bg:lightsteelblue}],[.NET_hypervisor]<->[CDN],[Nginx]<-[CDN],[Web_application]<->[Database],[Web_application]<->[CDN],[Inc_aggregator{bg:yellow}]->[CDN],[Inc_aggregator]<->[Database],[Web_application]<->[.NET_hypervisor],[Html_parser{bg:rosybrown}]<->[Database],[Html_parser]<->[CDN])
+![yuml diagram](http://yuml.me/diagram/scruffy;dir:LR/class/[Nginx]<->[Web_application{bg:yellowgreen}],[Nginx]<->[Cdn],[Mongo]<->[Dth_hypervisor{bg:lightsteelblue}],[Web_application]<->[Mongo],[Web_application]<->[Dth_hypervisor],[Aggregator{bg:rosybrown}]<->[Mongo])
 
 ## Руководство по началу работы
 
 После клонирования репозитория создайте файл `./.env` с переменными окружения.
 
-| Имя | Пример | Описание |
-|-----|--------|----------|
-| `MONGO_URL` | mongodb://user:pass@host:27017/collection | Параметры установки соединения с базой данных `Mongo`. |
-| `MONGO_ROOT_PASSWORD`          | 1a2b3c4e | Уставливает пароль `root`, который является суперпользователем. |
+| Имя | Описание |
+|-----|----------|
+| `MONGO_URL` | Параметры установки соединения с базой данных `mongo` |
+| `MONGO_ROOT_USERNAME` | Создает нового пользователя и получает роль `root` |
+| `MONGO_ROOT_PASSWORD` | Уставливает пароль `root` пользователя |
 
 ### Nginx
 

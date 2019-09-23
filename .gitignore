@@ -1,3 +1,13 @@
 # Environment variables
 .env.!example
 .env
+
+# Build
+logs
+public
+mongodump
+docker-compose.yml
+Dockerfile
+backup
+data
+nginx
