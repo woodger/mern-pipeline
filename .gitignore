@@ -1,10 +1,2 @@
-# Environment variables
-.env.!example
-.env
-
-# Build
-logs
-public
 docker-compose.yml
-Dockerfile
-nginx
+.env
