@@ -25,9 +25,11 @@ WEB_PORT=$(free_port)
 SUBNET=$(dotenv SUBNET)
 GATEWAY="${SUBNET%.*}.1"
 
-if [ -d './api' ]; then
-  rm -rf ./api
-fi
+for i in ./api ./web ./nginx; do
+  if [ -d $i ]; then
+    rm -rf $i
+  fi
+done
 
 git clone $(dotenv API_REPO) ./api
 
@@ -38,12 +40,8 @@ MONGO_DB=$(dotenv MONGO_DB)
 MONGO_USERNAME=$(dotenv MONGO_USERNAME)
 MONGO_PASSWORD=$(dotenv MONGO_PASSWORD)
 OFFICE_URL=$(dotenv OFFICE_URL)
-STORAGE=$(dotenv STORAGE)
+STORAGE=./storage
 EOF
-
-if [ -d './web' ]; then
-  rm -rf ./web
-fi
 
 git clone $(dotenv WEB_REPO) ./web
 
@@ -52,7 +50,7 @@ NODE_ENV=development
 API_URL=http://$(dotenv DOMAIN)
 EOF
 
-mkdir -p ./nginx
+mkdir ./nginx
 
 cat << EOF > ./nginx/nginx.conf
 server {
