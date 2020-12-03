@@ -1,2 +1,7 @@
 docker-compose.yml
 .env
+api
+web
+nginx
+products
+storage

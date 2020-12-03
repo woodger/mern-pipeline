@@ -5,15 +5,11 @@ if [ ! -f './.env' ]; then
   exit 1
 fi
 
-function dotenv() {
+function dotenv {
   grep $1 ./.env | egrep -v '^#'|cut -f2 -d '='
 }
 
-function repo_name {
-  echo $1 | awk -F '/' '{print $NF}'
-}
-
-function free_port() {
+function free_port {
   while :; do
     PORT=$(shuf -i 1024-49151 -n 1)
     LINE=$(lsof -i :$PORT | wc -l)
@@ -24,19 +20,37 @@ function free_port() {
   done
 }
 
-REPO_LIST=( $(dotenv API_REPO) $(dotenv WEB_REPO) )
-WEB_PORT=$(free_port)
 API_PORT=$(free_port)
+WEB_PORT=$(free_port)
 SUBNET=$(dotenv SUBNET)
+GATEWAY="${SUBNET%.*}.1"
 
-for i in ${REPO_LIST[@]}; do
-  if [ -d $(repo_name $i) ]; then
-    rm -rf ./$(repo_name $i)
-  fi
+if [ -d './api' ]; then
+  rm -rf ./api
+fi
 
-  git clone $i ./$(repo_name $i)
-  cp -u ./.env ./$(repo_name $i)
-done
+git clone $(dotenv API_REPO) ./api
+
+cat << EOF > ./api/.env
+API_KEY=$(dotenv API_KEY)
+MONGO_URL=$GATEWAY:27017
+MONGO_DB=$(dotenv MONGO_DB)
+MONGO_USERNAME=$(dotenv MONGO_USERNAME)
+MONGO_PASSWORD=$(dotenv MONGO_PASSWORD)
+OFFICE_URL=$(dotenv OFFICE_URL)
+STORAGE=$(dotenv STORAGE)
+EOF
+
+if [ -d './web' ]; then
+  rm -rf ./web
+fi
+
+git clone $(dotenv WEB_REPO) ./web
+
+cat << EOF > ./web/.env
+NODE_ENV=development
+API_URL=http://$(dotenv DOMAIN)
+EOF
 
 mkdir -p ./nginx
 
@@ -45,12 +59,16 @@ server {
   listen 80;
   server_name $(dotenv DOMAIN);
 
+  location /cdn {
+    root $(pwd)/storage;
+  }
+
   location /api {
-    proxy_pass http://${SUBNET%.*}.1:$API_PORT;
+    proxy_pass http://$GATEWAY:$API_PORT;
   }
 
   location / {
-    proxy_pass http://${SUBNET%.*}.1:$WEB_PORT;
+    proxy_pass http://$GATEWAY:$WEB_PORT;
   }
 }
 EOF
@@ -80,35 +98,29 @@ services:
       - docker_default
   api:
     build:
-      context: ./$(repo_name $(dotenv API_REPO))
+      context: ./api
     depends_on:
       - nginx
       - mongo
     restart: unless-stopped
     ports:
-      - "$API_PORT:8080"
+      - "$API_PORT:3000"
     volumes:
       - ./products:/products
-    environment:
-      - API_KEY=$(dotenv API_KEY)
-      - MONGO_URL=${SUBNET%.*}.1:27017
-      - MONGO_DB=$(dotenv MONGO_DB)
-      - MONGO_USERNAME=$(dotenv MONGO_USERNAME)
-      - MONGO_PASSWORD=$(dotenv MONGO_PASSWORD)
-      - STORAGE_PATH=$(dotenv STORAGE_PATH)
-      - OFFICE_URL=$(dotenv OFFICE_URL)
+    extra_hosts:
+      - "$(dotenv DOMAIN):$GATEWAY"
     networks:
       - docker_default
   web:
     build:
-      context: ./$(repo_name $(dotenv WEB_REPO))
+      context: ./web
     depends_on:
       - api
     restart: unless-stopped
     ports:
       - "$WEB_PORT:3000"
-    environment:
-      - API_URL=$(dotenv API_URL)
+    extra_hosts:
+      - "$(dotenv DOMAIN):$GATEWAY"
     networks:
       - docker_default
 networks:
@@ -117,7 +129,7 @@ networks:
     ipam:
       driver: default
       config:
-      - subnet: ${SUBNET}
+      - subnet: $(dotenv SUBNET)
 EOF
 
 docker-compose up --build
