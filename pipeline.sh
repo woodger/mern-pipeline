@@ -29,9 +29,12 @@ for i in ./api ./web ./nginx; do
   if [ -d $i ]; then
     rm -rf $i
   fi
+
+  mkdir $i
 done
 
-git clone $(dotenv API_REPO) ./api
+git clone -b develop --single-branch $(dotenv API_REPO) ./api
+git clone -b develop --single-branch $(dotenv WEB_REPO) ./web
 
 cat << EOF > ./api/.env
 API_KEY=$(dotenv API_KEY)
@@ -43,30 +46,38 @@ OFFICE_URL=$(dotenv OFFICE_URL)
 STORAGE=./storage
 EOF
 
-git clone $(dotenv WEB_REPO) ./web
-
 cat << EOF > ./web/.env
-NODE_ENV=development
+# NODE_ENV=development
 API_URL=http://$(dotenv DOMAIN)
 EOF
 
-mkdir ./nginx
+PROXY=$(cat <<-EOF
+  proxy_http_version 1.1;
+  proxy_set_header Host $(dotenv DOMAIN);
+  proxy_set_header Origin \$scheme://\$host;
+
+  # This send 10.0.0.1
+  # proxy_set_header IP \$remote_addr;
+EOF)
 
 cat << EOF > ./nginx/nginx.conf
 server {
   listen 80;
   server_name $(dotenv DOMAIN);
-
-  location /cdn {
-    root $(pwd)/storage;
-  }
+  root /var/static;
 
   location /api {
     proxy_pass http://$GATEWAY:$API_PORT;
+    $PROXY
   }
 
   location / {
+    try_files \$uri @web;
+  }
+
+  location @web {
     proxy_pass http://$GATEWAY:$WEB_PORT;
+    $PROXY
   }
 }
 EOF
@@ -82,6 +93,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx:/etc/nginx/conf.d
+      - ./web/static:/var/static
     networks:
       - docker_default
   mongo:
@@ -105,8 +117,6 @@ services:
       - "$API_PORT:3000"
     volumes:
       - ./products:/products
-    extra_hosts:
-      - "$(dotenv DOMAIN):$GATEWAY"
     networks:
       - docker_default
   web:
