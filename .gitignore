@@ -1,7 +1,7 @@
-docker-compose.yml
-wudger-api
-wudger-web
 nginx
+api
+web
 products
 storage
+docker-compose.yml
 .env

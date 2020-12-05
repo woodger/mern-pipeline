@@ -9,7 +9,7 @@ function dotenv {
   grep $1 ./.env | egrep -v '^#'|cut -f2 -d '='
 }
 
-function free_port {
+function freeport {
   while :; do
     PORT=$(shuf -i 1024-49151 -n 1)
     LINE=$(lsof -i :$PORT | wc -l)
@@ -20,44 +20,34 @@ function free_port {
   done
 }
 
-function reponame {
-  echo $(dotenv $i) | awk -F '/' '{print $NF}'
-}
-
-API_PORT=$(free_port)
-WEB_PORT=$(free_port)
+API_PORT=$(freeport)
+WEB_PORT=$(freeport)
+MONGO_PORT=$(freeport)
 SUBNET=$(dotenv SUBNET)
 GATEWAY="${SUBNET%.*}.1"
 
-# for i in ./api ./web ./nginx; do
-#   if [ -d $i ]; then
-#     rm -rf $i
-#   fi
-#
-#   mkdir $i
-# done
-
-for i in storage nginx; do
-  mkdir -p ./$i
-done
-
-for i in API_REPO WEB_REPO; do
-  if [ ! -d ./$(reponame $i) ]; then
-    git clone $(dotenv $i)
+for i in ./api ./web ./nginx; do
+  if [ -d $i ]; then
+    rm -rf $i
   fi
+
+  mkdir $i
 done
 
-cat << EOF > ./$(reponame API_REPO)/.env
+git clone -b develop --single-branch $(dotenv API_REPO) ./api
+git clone -b develop --single-branch $(dotenv WEB_REPO) ./web
+
+cat << EOF > ./api/.env
 NODE_ENV=development
 API_KEY=$(dotenv API_KEY)
-MONGO_URL=$GATEWAY:27017
+MONGO_URL=$GATEWAY:$MONGO_PORT
 MONGO_DB=$(dotenv MONGO_DB)
 MONGO_USERNAME=$(dotenv MONGO_USERNAME)
 MONGO_PASSWORD=$(dotenv MONGO_PASSWORD)
 OFFICE_URL=$(dotenv OFFICE_URL)
 EOF
 
-cat << EOF > ./$(reponame WEB_REPO)/.env
+cat << EOF > ./web/.env
 NODE_ENV=development
 API_URL=http://$(dotenv DOMAIN)
 EOF
@@ -112,14 +102,14 @@ services:
     volumes:
       - ./nginx:/etc/nginx/conf.d
       - ./storage:/var/storage
-      - ./$(reponame WEB_REPO)/static:/var/static
+      - ./web/static:/var/static
     networks:
       - docker_default
   mongo:
     image: mongo
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "$MONGO_PORT:27017"
     environment:
       - MONGO_INITDB_ROOT_USERNAME=$(dotenv MONGO_USERNAME)
       - MONGO_INITDB_ROOT_PASSWORD=$(dotenv MONGO_PASSWORD)
@@ -127,7 +117,7 @@ services:
       - docker_default
   api:
     build:
-      context: ./$(reponame API_REPO)
+      context: ./api
     depends_on:
       - nginx
       - mongo
@@ -143,7 +133,7 @@ services:
       - docker_default
   web:
     build:
-      context: ./$(reponame WEB_REPO)
+      context: ./web
     depends_on:
       - api
     restart: unless-stopped
