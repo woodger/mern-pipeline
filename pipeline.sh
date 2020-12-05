@@ -20,59 +20,77 @@ function free_port {
   done
 }
 
+function reponame {
+  echo $(dotenv $i) | awk -F '/' '{print $NF}'
+}
+
 API_PORT=$(free_port)
 WEB_PORT=$(free_port)
 SUBNET=$(dotenv SUBNET)
 GATEWAY="${SUBNET%.*}.1"
 
-for i in ./api ./web ./nginx; do
-  if [ -d $i ]; then
-    rm -rf $i
-  fi
+# for i in ./api ./web ./nginx; do
+#   if [ -d $i ]; then
+#     rm -rf $i
+#   fi
+#
+#   mkdir $i
+# done
 
-  mkdir $i
+for i in storage nginx; do
+  mkdir -p ./$i
 done
 
-git clone -b develop --single-branch $(dotenv API_REPO) ./api
-git clone -b develop --single-branch $(dotenv WEB_REPO) ./web
+for i in API_REPO WEB_REPO; do
+  if [ ! -d ./$(reponame $i) ]; then
+    git clone $(dotenv $i)
+  fi
+done
 
-cat << EOF > ./api/.env
+cat << EOF > ./$(reponame API_REPO)/.env
+NODE_ENV=development
 API_KEY=$(dotenv API_KEY)
 MONGO_URL=$GATEWAY:27017
 MONGO_DB=$(dotenv MONGO_DB)
 MONGO_USERNAME=$(dotenv MONGO_USERNAME)
 MONGO_PASSWORD=$(dotenv MONGO_PASSWORD)
 OFFICE_URL=$(dotenv OFFICE_URL)
-STORAGE=./storage
 EOF
 
-cat << EOF > ./web/.env
-# NODE_ENV=development
+cat << EOF > ./$(reponame WEB_REPO)/.env
+NODE_ENV=development
 API_URL=http://$(dotenv DOMAIN)
 EOF
 
-PROXY=$(cat <<-EOF
+PROXY=$(
+cat << EOF
   proxy_http_version 1.1;
   proxy_set_header Host $(dotenv DOMAIN);
   proxy_set_header Origin \$scheme://\$host;
-
-  # This send 10.0.0.1
-  # proxy_set_header IP \$remote_addr;
-EOF)
+EOF
+)
 
 cat << EOF > ./nginx/nginx.conf
 server {
   listen 80;
   server_name $(dotenv DOMAIN);
-  root /var/static;
+
+  gzip on;
+  gzip_types text/plain text/css application/javascript application/json application/msword image/svg+xml image/png image/jpeg image/gif;
 
   location /api {
-    proxy_pass http://$GATEWAY:$API_PORT;
-    $PROXY
+    try_files \$uri @api;
+    root /var/storage;
   }
 
   location / {
     try_files \$uri @web;
+    root /var/static;
+  }
+
+  location @api {
+    proxy_pass http://$GATEWAY:$API_PORT;
+    $PROXY
   }
 
   location @web {
@@ -93,7 +111,8 @@ services:
       - "443:443"
     volumes:
       - ./nginx:/etc/nginx/conf.d
-      - ./web/static:/var/static
+      - ./storage:/var/storage
+      - ./$(reponame WEB_REPO)/static:/var/static
     networks:
       - docker_default
   mongo:
@@ -108,20 +127,23 @@ services:
       - docker_default
   api:
     build:
-      context: ./api
+      context: ./$(reponame API_REPO)
     depends_on:
       - nginx
       - mongo
     restart: unless-stopped
     ports:
       - "$API_PORT:3000"
+    extra_hosts:
+      - "hyper-office.ru:$GATEWAY"
     volumes:
+      - ./storage:/app/storage
       - ./products:/products
     networks:
       - docker_default
   web:
     build:
-      context: ./web
+      context: ./$(reponame WEB_REPO)
     depends_on:
       - api
     restart: unless-stopped
