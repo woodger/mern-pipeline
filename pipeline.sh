@@ -1,21 +1,45 @@
 #!/bin/bash
 
-if [ ! -f './.env' ]; then
-  echo 'Can’t find a .env file in this directory'
-  exit 1
-fi
+# general dependencies:
+#
+#   docker
+#   docker-compose
+
+function cwd {
+  local script exists result
+
+  script=$(ps -o cmd $$ | tail -1 | cut -f2 -d ' ')
+  exists=$(echo $script | sed -n '/\//p')
+  result=$(echo ${script%/*})
+
+  if [[ ! $exists ]] || [[ $result == '.' ]]; then
+    pwd
+    return
+  fi
+
+  echo $result
+}
+
+cd $(cwd)
 
 function dotenv {
-  grep $1 ./.env | egrep -v '^#'|cut -f2 -d '='
+  grep $1 ./.env | egrep -v '^#'| cut -f2 -d '='
+}
+
+function dotenv {
+  grep $1 ./.env | egrep -v '^#'| cut -f2 -d '='
 }
 
 function freeport {
+  local p x
+
   while :; do
-    PORT=$(shuf -i 1024-49151 -n 1)
-    LINE=$(lsof -i :$PORT | wc -l)
-    if [ $LINE == 0 ]; then
-      echo $PORT
-      break
+    p=$(shuf -i 1024-49151 -n 1)
+    x=$(lsof -i :$p | wc -l)
+
+    if [[ $x == 0 ]]; then
+      echo $p
+      return
     fi
   done
 }
@@ -24,28 +48,23 @@ API_PORT=$(freeport)
 WEB_PORT=$(freeport)
 MONGO_PORT=$(freeport)
 SUBNET=$(dotenv SUBNET)
-GATEWAY="${SUBNET%.*}.1"
+GATEWAY=${SUBNET%.*}.1
 
-for i in ./api ./web ./nginx; do
-  if [ -d $i ]; then
-    rm -rf $i
+if [[ ! -f ./.env ]]; then
+  echo "Can’t find a .env file in $(pwd)"
+  exit 1
+fi
+
+for path in ./api ./web ./nginx; do
+  if [[ -d $path ]]; then
+    rm -rf $path
   fi
 
-  mkdir $i
+  mkdir $path
 done
 
 git clone -b develop --single-branch $(dotenv API_REPO) ./api
 git clone -b develop --single-branch $(dotenv WEB_REPO) ./web
-
-cat << EOF > ./api/.env
-NODE_ENV=development
-API_KEY=$(dotenv API_KEY)
-MONGO_URL=$GATEWAY:$MONGO_PORT
-MONGO_DB=$(dotenv MONGO_DB)
-MONGO_USERNAME=$(dotenv MONGO_USERNAME)
-MONGO_PASSWORD=$(dotenv MONGO_PASSWORD)
-OFFICE_URL=$(dotenv OFFICE_URL)
-EOF
 
 cat << EOF > ./web/.env
 NODE_ENV=development
@@ -129,6 +148,14 @@ services:
     volumes:
       - ./storage:/app/storage
       - ./products:/products
+    environment:
+      - NODE_ENV=development
+      - API_KEY=$(dotenv API_KEY)
+      - MONGO_URL=$GATEWAY:$MONGO_PORT
+      - MONGO_DB=$(dotenv MONGO_DB)
+      - MONGO_USERNAME=$(dotenv MONGO_USERNAME)
+      - MONGO_PASSWORD=$(dotenv MONGO_PASSWORD)
+      - OFFICE_URL=$(dotenv OFFICE_URL)
     networks:
       - docker_default
   web:

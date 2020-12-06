@@ -27,3 +27,10 @@ docker-compose up
 ```
 
 Docker Compose использует Docker Engine для любой значимой работы, поэтому убедитесь, что Docker Engine установлен локально или удаленно, в зависимости от ваших настроек.
+
+## Юнит
+
+```
+sudo nano /etc/systemd/system/wudger.service
+sudo systemctl daemon-reload
+```
