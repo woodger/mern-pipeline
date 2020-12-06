@@ -30,6 +30,15 @@ function usage {
   echo "  "$PROGNAME" stop"
 }
 
+for package in docker docker-compose lsof; do
+  which $package &> /dev/null
+
+  if [ $? == 1 ]; then
+    echo "You required install: "$package
+    exit 1
+  fi
+done
+
 GETOPT_ARGS=$(getopt -o hvd -l "help","version" -n "$PROGNAME" -- "$@")
 DETACHED=
 
@@ -62,10 +71,18 @@ while :; do
   esac
 done
 
-if [[ ! $1 ]]; then
+function comands {
+  for cmd in up stop; do
+    if [[ $1 == $cmd ]]; then
+      return
+    fi
+  done
+
   usage
   exit 1
-fi
+}
+
+comands $1
 
 if [[ $1 == "stop" ]]; then
   docker-compose stop
@@ -228,3 +245,6 @@ if [[ $1 == "up" ]]; then
   docker-compose up --build $DETACHED
   exit
 fi
+
+usage
+exit 1
