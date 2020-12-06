@@ -5,6 +5,7 @@
 #   docker
 #   docker-compose
 
+VERSION=0.0.1
 PROGNAME=$(basename $0)
 CWD=$(dirname $0)
 
@@ -15,6 +16,7 @@ function usage {
   echo
   echo "Options:"
   echo "  -h, --help         Show this help"
+  echo "  -v, --version      Print version number"
   echo "  -d                 Detached mode: Run containers in the background"
   echo "                     print new container names"
   echo
@@ -27,7 +29,7 @@ function usage {
   echo "  "$PROGNAME" stop"
 }
 
-GETOPT_ARGS=$(getopt -o hd -l "help" -n "$PROGNAME" -- "$@")
+GETOPT_ARGS=$(getopt -o hvd -l "help","version" -n "$PROGNAME" -- "$@")
 DETACHED=
 
 if [[ $? -ne 0 ]]; then
@@ -42,6 +44,10 @@ while :; do
   case $1 in
     -h|--help)
       usage
+      exit
+      ;;
+    -v|--version)
+      echo $VERSION
       exit
       ;;
     -d)

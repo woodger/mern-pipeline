@@ -5,8 +5,8 @@ After=network.target
 [Service]
 Type=forking
 RemainAfterExit=yes
-ExecStart=bash /home/stanislav/projects/own/wudger/pipeline.sh -d up
-ExecStop=bash /home/stanislav/projects/own/wudger/pipeline.sh stop
+ExecStart=bash /opt/wudger/pipeline.sh -d up
+ExecStop=bash /opt/wudger/pipeline.sh stop
 
 [Install]
 WantedBy=multi-user.target
