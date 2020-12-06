@@ -1,11 +1,12 @@
 [Unit]
-Description=Wudger Application Pipeline
+Description=Wudger Pipeline
 After=network.target
 
 [Service]
-Type=oneshot
+Type=forking
 RemainAfterExit=yes
-ExecStart=bash /opt/wudger/pipeline.sh &
+ExecStart=bash /home/stanislav/projects/own/wudger/pipeline.sh -d up
+ExecStop=bash /home/stanislav/projects/own/wudger/pipeline.sh stop
 
 [Install]
 WantedBy=multi-user.target

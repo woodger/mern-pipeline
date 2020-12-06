@@ -33,4 +33,5 @@ Docker Compose использует Docker Engine для любой значим
 ```
 sudo nano /etc/systemd/system/wudger.service
 sudo systemctl daemon-reload
+sudo systemctl stop wudger
 ```

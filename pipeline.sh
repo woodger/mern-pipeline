@@ -5,41 +5,80 @@
 #   docker
 #   docker-compose
 
-function cwd {
-  local script exists result
+PROGNAME=$(basename $0)
+CWD=$(dirname $0)
 
-  script=$(ps -o cmd $$ | tail -1 | cut -f2 -d ' ')
-  exists=$(echo $script | sed -n '/\//p')
-  result=$(echo ${script%/*})
-
-  if [[ ! $exists ]] || [[ $result == '.' ]]; then
-    pwd
-    return
-  fi
-
-  echo $result
+function usage {
+  echo "Usage:"
+  echo "  "$PROGNAME" [options] [COMMAND]"
+  echo "  "$PROGNAME" -h|--help"
+  echo
+  echo "Options:"
+  echo "  -h, --help         Show this help"
+  echo "  -d                 Detached mode: Run containers in the background"
+  echo "                     print new container names"
+  echo
+  echo "Commands:"
+  echo "  up                 Create and start containers"
+  echo "  stop               Stop services"
+  echo
+  echo "Examples:"
+  echo "  "$PROGNAME" up"
+  echo "  "$PROGNAME" stop"
 }
 
-cd $(cwd)
+GETOPT_ARGS=$(getopt -o hd -l "help" -n "$PROGNAME" -- "$@")
+DETACHED=
+
+if [[ $? -ne 0 ]]; then
+  usage
+  exit 1
+fi
+
+cd $CWD
+eval set -- $GETOPT_ARGS
+
+while :; do
+  case $1 in
+    -h|--help)
+      usage
+      exit
+      ;;
+    -d)
+      DETACHED=$1
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+  esac
+done
+
+if [[ ! $1 ]]; then
+  usage
+  exit 1
+fi
+
+if [[ $1 == "stop" ]]; then
+  docker-compose stop
+  exit
+fi
 
 function dotenv {
-  grep $1 ./.env | egrep -v '^#'| cut -f2 -d '='
-}
-
-function dotenv {
-  grep $1 ./.env | egrep -v '^#'| cut -f2 -d '='
+  grep $1 ./.env | egrep -v "^#"| cut -f2 -d "="
 }
 
 function freeport {
-  local p x
+  local port find
 
   while :; do
-    p=$(shuf -i 1024-49151 -n 1)
-    x=$(lsof -i :$p | wc -l)
+    port=$(shuf -i 1024-49151 -n 1)
+    find=$(lsof -i :$port | wc -l)
 
-    if [[ $x == 0 ]]; then
-      echo $p
-      return
+    if [[ $find == 0 ]]; then
+      echo $port
+      break
     fi
   done
 }
@@ -179,4 +218,7 @@ networks:
       - subnet: $(dotenv SUBNET)
 EOF
 
-docker-compose up --build
+if [[ $1 == "up" ]]; then
+  docker-compose up --build $DETACHED
+  exit
+fi
