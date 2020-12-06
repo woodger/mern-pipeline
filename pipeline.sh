@@ -6,7 +6,7 @@
 #   docker-compose
 #   lsof
 
-VERSION=0.0.2
+VERSION=0.0.3
 PROGNAME=$(basename $0)
 CWD=$(dirname $0)
 
