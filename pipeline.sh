@@ -89,16 +89,16 @@ function freeport {
   done
 }
 
+if [[ ! -f ./.env ]]; then
+  echo "Can’t find a .env file in $(pwd)"
+  exit 1
+fi
+
 API_PORT=$(freeport)
 WEB_PORT=$(freeport)
 MONGO_PORT=$(freeport)
 SUBNET=$(dotenv SUBNET)
 GATEWAY=${SUBNET%.*}.1
-
-if [[ ! -f ./.env ]]; then
-  echo "Can’t find a .env file in $(pwd)"
-  exit 1
-fi
 
 for path in ./api ./web ./nginx; do
   if [[ -d $path ]]; then
@@ -118,9 +118,9 @@ EOF
 
 PROXY=$(
 cat << EOF
-  proxy_http_version 1.1;
-  proxy_set_header Host $(dotenv DOMAIN);
-  proxy_set_header Origin \$scheme://\$host;
+    proxy_http_version 1.1;
+    proxy_set_header Host $(dotenv DOMAIN);
+    proxy_set_header Origin \$scheme://\$host;
 EOF
 )
 
