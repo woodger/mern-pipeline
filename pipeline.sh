@@ -4,8 +4,9 @@
 #
 #   docker
 #   docker-compose
+#   lsof
 
-VERSION=0.0.1
+VERSION=0.0.2
 PROGNAME=$(basename $0)
 CWD=$(dirname $0)
 
@@ -76,13 +77,12 @@ function dotenv {
 }
 
 function freeport {
-  local port find
+  local port
 
   while :; do
     port=$(shuf -i 1024-49151 -n 1)
-    find=$(lsof -i :$port | wc -l)
 
-    if [[ $find == 0 ]]; then
+    if [[ ! $(lsof -i :$port) ]]; then
       echo $port
       break
     fi
