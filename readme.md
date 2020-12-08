@@ -22,8 +22,7 @@ Usage:
   sh mern-pipeline.sh COMMAND [options] DIR
   sh mern-pipeline.sh -h|--help
 
-The DIR parameter is a build’s context. The default DIR is the
-value of the HOME shell variable
+The DIR parameter is a build’s context
 
 Commands:
   up                  Create and start containers
@@ -54,7 +53,7 @@ Options:
 
 Examples:
   sh mern-pipeline.sh up --domain example.com /app
-  sh mern-pipeline.sh stop
+  sh mern-pipeline.sh stop /app
 ```
 
 ### Configuration options
