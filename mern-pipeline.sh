@@ -2,17 +2,17 @@
 
 # general dependencies:
 #
-#   docker
 #   docker-compose
+#   lsof
 
-VERSION=0.0.4
+VERSION=0.0.5
 PROGNAME=$(basename $0)
 
 function usage {
   echo
   echo "Usage:"
-  echo "  "$PROGNAME" COMMAND [options] DIR"
-  echo "  "$PROGNAME" -h|--help"
+  echo "  sh "$PROGNAME" COMMAND [options] DIR"
+  echo "  sh "$PROGNAME" -h|--help"
   echo
   echo "The DIR parameter is a build’s context. The default DIR is the"
   echo "value of the HOME shell variable"
@@ -26,23 +26,51 @@ function usage {
   echo "  -v, --version       Print version number"
   echo "  -d                  Detached mode: Run containers in the background"
   echo "                      print new container names"
+  echo "  --domain            Server name (default: localhost)"
   echo "  --subnet            Docker subnet for container networking"
   echo "                      already configure. (default: 10.0.0.0/24)"
-  echo "  --domain        Server name (default: localhost)"
-  echo "  -k, --key           Use 8 digits passphrase or most for HMAC"
+  echo "  --env-file          Read in a file of environment variables"
+  echo "  --branch            Specify source git branch"
+  echo "  --api-repository    Remote or local the Api service repository"
+  echo "  --web-repository    Remote or local the Web service repository"
+  echo "  --mongo-username    Create a new user and set that user's password."
+  echo "                      This user is created in the admin authentication"
+  echo "                      database and given the role of root, which"
+  echo "                      is a superuser role (default: admin)"
+  echo "  --mongo-password    Use than 8 digits passphrase"
   echo "                      Even a long passphrase can be quite useless"
   echo "                      if it is a regular word from a dictionary."
   echo "                      Randomize letters, numbers, and symbols mixing"
   echo "                      in the uppercase letters in your otherwise"
   echo "                      lowercase passphrase and vice versa."
-  echo "  --env-file          Read in a file of environment variables"
   echo
   echo "Examples:"
-  echo "  "$PROGNAME" up --domain example.com /app"
-  echo "  "$PROGNAME" stop"
+  echo "  sh "$PROGNAME" up --domain example.com /app"
+  echo "  sh "$PROGNAME" stop"
 }
 
-for x in docker docker-compose; do
+function freeport {
+  local x
+
+  while :; do
+    x=$(shuf -i 1024-49151 -n 1)
+
+    if [[ ! $(lsof -i :$x) ]]; then
+      echo $x
+      break
+    fi
+  done
+}
+
+function signand {
+  if [[ ! -f $1 ]]; then
+    < /dev/urandom tr -dc A-Za-z0-9 | head -c32 > $1
+  fi
+
+  cat $1
+}
+
+for x in docker docker-compose lsof; do
   which $x &> /dev/null
 
   if [[ $? == 1 ]]; then
@@ -52,14 +80,18 @@ for x in docker docker-compose; do
 done
 
 GETOPT_ARGS=$(getopt -o hvd -l "help","version","subnet:","domain:","env-file:","branch:","api-repository:","web-repository:","mongo-username:","mongo-password:" -n "$PROGNAME" -- "$@")
-DETACH=
+
+MODE=
 SUBNET="10.0.0.0/24"
 DOMAIN="localhost"
 BRANCH=
-API_REPO=
-WEB_REPO=
-MONGO_USERNAME="root"
-MONGO_PASSWORD=$(< /dev/urandom tr -dc _A-Za-z-0-9 | head -c8; echo)
+API_PORT=$(freeport)
+API_REPOSITORY=
+WEB_PORT=$(freeport)
+WEB_REPOSITORY=
+MONGO_PORT=$(freeport)
+MONGO_USERNAME="admin"
+MONGO_PASSWORD=
 
 if [[ $? -ne 0 ]]; then
   usage
@@ -79,7 +111,7 @@ while :; do
       exit
       ;;
     -d)
-      DETACH=$1
+      MODE=$1
       shift
       ;;
     --subnet)
@@ -92,24 +124,24 @@ while :; do
       DOMAIN=$1
       shift
       ;;
-    --env-file)
-      shift
-      ENV_FILE=$1
-      shift
-      ;;
     --branch)
       shift
       BRANCH=$1
       shift
       ;;
+    --env-file)
+      shift
+      ENV_FILE=$1
+      shift
+      ;;
     --api-repository)
       shift
-      API_REPO=$1
+      API_REPOSITORY=$1
       shift
       ;;
     --web-repository)
       shift
-      WEB_REPO=$1
+      WEB_REPOSITORY=$1
       shift
       ;;
     --mongo-username)
@@ -150,26 +182,30 @@ then
   exit 1
 fi
 
-if [[ $ENV_FILE ]] && [[ ! -f $ENV_FILE ]]; then
-  echo "The file specified in --env-file was not found"
-  exit 1
-fi
-
-if [[ ! $ENV_FILE ]] && [[ -f .env ]]; then
+if [[ ! $ENV_FILE ]]; then
   ENV_FILE=.env
+
+  if [[ ! -f $ENV_FILE ]]; then
+    echo "The file specified in --env-file was not found"
+    exit 1
+  fi
 fi
 
-if [[ ! $API_REPO ]]; then
-  echo "Parameter --api-repo is required"
+if [[ ! $API_REPOSITORY ]]; then
+  echo "Parameter --api-repository is required"
   exit 1
 fi
 
-if [[ ! $WEB_REPO ]]; then
-  echo "Parameter --web-repo is required"
+if [[ ! $WEB_REPOSITORY ]]; then
+  echo "Parameter --web-repository is required"
   exit 1
 fi
 
-for x in ./api ./web ./nginx; do
+if [[ ! $MONGO_PASSWORD ]]; then
+  MONGO_PASSWORD=$(signand .mongo_password)
+fi
+
+for x in ./nginx ./api ./web; do
   if [[ -d $x ]]; then
     rm -rf $x
   fi
@@ -178,17 +214,14 @@ for x in ./api ./web ./nginx; do
 done
 
 if [[ $BRANCH ]]; then
-  git clone -b $BRANCH --single-branch $API_REPO ./api
-  git clone -b $BRANCH --single-branch $WEB_REPO ./web
+  git clone -b $BRANCH --single-branch $API_REPOSITORY ./api
+  git clone -b $BRANCH --single-branch $WEB_REPOSITORY ./web
 else
-  git clone $API_REPO ./api
-  git clone $WEB_REPO ./web
+  git clone $API_REPOSITORY ./api
+  git clone $WEB_REPOSITORY ./web
 fi
 
-cat << EOF > ./web/.env
-NODE_ENV=$NODE_ENV
-API_URL=http://$DOMAIN
-EOF
+cp $ENV_FILE web
 
 cat << EOF > ./nginx/nginx.conf
 server {
@@ -209,14 +242,14 @@ server {
   }
 
   location @api {
-    proxy_pass http://$GATEWAY:4000;
+    proxy_pass http://$GATEWAY:$API_PORT;
     proxy_set_header Host $DOMAIN;
     proxy_set_header Origin \$scheme://\$host;
     proxy_http_version 1.1;
   }
 
   location @web {
-    proxy_pass http://$GATEWAY:3000;
+    proxy_pass http://$GATEWAY:$WEB_PORT;
     proxy_set_header Host $DOMAIN;
     proxy_set_header Origin \$scheme://\$host;
     proxy_http_version 1.1;
@@ -232,7 +265,6 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx:/etc/nginx/conf.d
       - ./storage:/var/storage
@@ -243,7 +275,7 @@ services:
     image: mongo
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "$MONGO_PORT:27017"
     environment:
       - MONGO_INITDB_ROOT_USERNAME=$MONGO_USERNAME
       - MONGO_INITDB_ROOT_PASSWORD=$MONGO_PASSWORD
@@ -257,15 +289,12 @@ services:
       - mongo
     restart: unless-stopped
     ports:
-      - "4000:3000"
-    extra_hosts:
-      - "hyper-office.ru:$GATEWAY"
+      - "$API_PORT:3000"
     volumes:
       - ./storage:/app/storage
-      - ./products:/products
     environment:
       - NODE_ENV=$NODE_ENV
-      - MONGO_URL=$GATEWAY:27017
+      - MONGO_URL=$GATEWAY:$MONGO_PORT
       - MONGO_USERNAME=$MONGO_USERNAME
       - MONGO_PASSWORD=$MONGO_PASSWORD
     env_file:
@@ -279,7 +308,7 @@ services:
       - api
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "$WEB_PORT:3000"
     extra_hosts:
       - "$DOMAIN:$GATEWAY"
     networks:
@@ -294,7 +323,7 @@ networks:
 EOF
 
 if [[ $1 == "up" ]]; then
-  docker-compose up --build $DETACH
+  docker-compose up --build $MODE
   exit
 fi
 

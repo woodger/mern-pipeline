@@ -1,13 +1,13 @@
 [Unit]
-Description=Wudger Pipeline
+Description=MERN Pipeline
 After=network.target
 
 [Service]
 Type=forking
 RemainAfterExit=yes
 TimeoutStartUSec=10min
-ExecStart=bash /opt/wudger/pipeline.sh -d up
-ExecStop=bash /opt/wudger/pipeline.sh stop
+ExecStart=mern-pipeline up -d
+ExecStop=mern-pipeline stop
 
 [Install]
 WantedBy=multi-user.target
