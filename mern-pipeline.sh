@@ -14,8 +14,7 @@ function usage {
   echo "  sh "$PROGNAME" COMMAND [options] DIR"
   echo "  sh "$PROGNAME" -h|--help"
   echo
-  echo "The DIR parameter is a build’s context. The default DIR is the"
-  echo "value of the HOME shell variable"
+  echo "The DIR parameter is a build’s context"
   echo
   echo "Commands:"
   echo "  up                  Create and start containers"
@@ -85,6 +84,7 @@ MODE=
 SUBNET="10.0.0.0/24"
 DOMAIN="localhost"
 BRANCH=
+ENV_FILE=
 API_PORT=$(freeport)
 API_REPOSITORY=
 WEB_PORT=$(freeport)
@@ -93,7 +93,7 @@ MONGO_PORT=$(freeport)
 MONGO_USERNAME="admin"
 MONGO_PASSWORD=
 
-if [[ $? -ne 0 ]]; then
+if [[ $? != 0 ]]; then
   usage
   exit 1
 fi
@@ -161,8 +161,6 @@ while :; do
   esac
 done
 
-cd $2
-
 if [[ $1 == "stop" ]]; then
   docker-compose stop
   exit
@@ -179,6 +177,18 @@ GATEWAY=${SUBNET%.*}.1
 if [[ ! $DOMAIN == "localhost" ]] && [[ ! $DOMAIN =~ [-a-z0-9_]+\.[a-z]{2,} ]]
 then
   echo "Expected domain by following the RFC 882 standart"
+  exit 1
+fi
+
+if [[ ! $2 ]]; then
+  echo "Expected DIR parameter is a build’s context"
+  exit 1
+fi
+
+cd $2
+
+if [[ $ENV_FILE ]] && [[ ! -f $ENV_FILE ]]; then
+  echo "The file specified in --env-file was not found"
   exit 1
 fi
 
