@@ -45,7 +45,7 @@ function usage {
   echo
   echo "Examples:"
   echo "  sh "$PROGNAME" up --domain example.com /app"
-  echo "  sh "$PROGNAME" stop"
+  echo "  sh "$PROGNAME" stop /app"
 }
 
 function freeport {
@@ -161,6 +161,13 @@ while :; do
   esac
 done
 
+if [[ ! $2 ]]; then
+  echo "Expected DIR parameter is a build’s context"
+  exit 1
+fi
+
+cd $2
+
 if [[ $1 == "stop" ]]; then
   docker-compose stop
   exit
@@ -179,13 +186,6 @@ then
   echo "Expected domain by following the RFC 882 standart"
   exit 1
 fi
-
-if [[ ! $2 ]]; then
-  echo "Expected DIR parameter is a build’s context"
-  exit 1
-fi
-
-cd $2
 
 if [[ $ENV_FILE ]] && [[ ! -f $ENV_FILE ]]; then
   echo "The file specified in --env-file was not found"

@@ -1,10 +1,15 @@
 #!/bin/bash
 
+# This is Unit test for mern-pipeline.sh
+#
 # For a colored background are the commonly used color codes
 #     reset = 0, black = 40, red = 41, green = 42, yellow = 43, blue = 44,
 #     magenta = 45, cyan = 46, and white=47
 #
 # echo -e "\e[1;31m This is red text \e[0m"
+#
+# If ERROR: Pool overlaps with other one on this address space
+#     docker network prune
 
 PROGNAME=mern-pipeline.sh
 TEMPDIR=$(mktemp -d)
@@ -93,9 +98,21 @@ sh $PROGNAME up \
   "Negative: Must be exit SIGN if not # --api-repository"
 echo
 
-# sh $PROGNAME up \
-#   --api-repository $REPOSITORY \
-#   --web-repository $REPOSITORY \
-#   $TEMPDIR ; it 1 \
-#   "Negative: The file specified in --env-file. File is not found"
-# echo
+sh $PROGNAME up \
+  -d \
+  --domain example.com \
+  --subnet 10.0.0.0/24 \
+  --api-repository $REPOSITORY \
+  --web-repository $REPOSITORY \
+  $TEMPDIR | it "Successfully" \
+  "Positive: Create and start containers in detached mode"
+echo
+
+sh $PROGNAME stop \
+  $TEMPDIR | it "" \
+  "Positive: Stop services"
+echo
+
+cd $TEMPDIR
+
+docker-compose rm -f
