@@ -49,13 +49,13 @@ function usage {
 }
 
 function freeport {
-  local x
+  local port
 
   while :; do
-    x=$(shuf -i 1024-49151 -n 1)
+    port=$(shuf -i 1024-49151 -n 1)
 
-    if [[ ! $(lsof -i :$x) ]]; then
-      echo $x
+    if [[ ! $(lsof -i :$port) ]]; then
+      echo $port
       break
     fi
   done
@@ -69,11 +69,11 @@ function signand {
   cat $1
 }
 
-for x in docker docker-compose lsof; do
-  which $x &> /dev/null
+for progname in docker docker-compose lsof; do
+  which $progname &> /dev/null
 
   if [[ $? == 1 ]]; then
-    echo "You required install: "$x
+    echo "You required install: "$progname
     exit 1
   fi
 done
@@ -215,12 +215,12 @@ if [[ ! $MONGO_PASSWORD ]]; then
   MONGO_PASSWORD=$(signand .mongo_password)
 fi
 
-for x in ./nginx ./api ./web; do
-  if [[ -d $x ]]; then
-    rm -rf $x
+for dir in ./nginx ./api ./web; do
+  if [[ -d $dir ]]; then
+    rm -rf $dir
   fi
 
-  mkdir $x
+  mkdir $dir
 done
 
 if [[ $BRANCH ]]; then
@@ -231,7 +231,10 @@ else
   git clone $WEB_REPOSITORY ./web
 fi
 
-cp $ENV_FILE web
+cat << EOF > ./web/.env
+NODE_ENV=$NODE_ENV
+$(cat $ENV_FILE)
+EOF
 
 cat << EOF > ./nginx/nginx.conf
 server {

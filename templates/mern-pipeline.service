@@ -6,8 +6,8 @@ After=network.target
 Type=forking
 RemainAfterExit=yes
 TimeoutStartUSec=10min
-ExecStart=mern-pipeline up -d
-ExecStop=mern-pipeline stop
+ExecStart=mern-pipeline up -d /app
+ExecStop=mern-pipeline stop /app
 
 [Install]
 WantedBy=multi-user.target
