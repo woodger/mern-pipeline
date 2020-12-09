@@ -192,15 +192,6 @@ if [[ $ENV_FILE ]] && [[ ! -f $ENV_FILE ]]; then
   exit 1
 fi
 
-if [[ ! $ENV_FILE ]]; then
-  ENV_FILE=.env
-
-  if [[ ! -f $ENV_FILE ]]; then
-    echo "The file specified in --env-file was not found"
-    exit 1
-  fi
-fi
-
 if [[ ! $API_REPOSITORY ]]; then
   echo "Parameter --api-repository is required"
   exit 1
@@ -231,10 +222,17 @@ else
   git clone $WEB_REPOSITORY ./web
 fi
 
-cat << EOF > ./web/.env
+BULD_ENV=$(< /dev/urandom tr -dc a-z0-9 | head -c8)
+
+cat << EOF > ./$BULD_ENV
 NODE_ENV=$NODE_ENV
-$(cat $ENV_FILE)
 EOF
+
+if [[ -f $ENV_FILE ]]; then
+  cat $ENV_FILE >> ./$BULD_ENV
+fi
+
+cat ./$BULD_ENV >> ./web/.env
 
 cat << EOF > ./nginx/nginx.conf
 server {
@@ -311,7 +309,7 @@ services:
       - MONGO_USERNAME=$MONGO_USERNAME
       - MONGO_PASSWORD=$MONGO_PASSWORD
     env_file:
-      - $ENV_FILE
+      - ./$BULD_ENV
     networks:
       - docker_default
   web:
