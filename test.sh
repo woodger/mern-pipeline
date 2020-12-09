@@ -87,10 +87,6 @@ sh $PROGNAME up $TEMPDIR; it 1 \
   "Negative: If # --env-file is empty, file .env should be exist in DIR build’s context"
 echo
 
-cat << EOF > $TEMPDIR/.env
-TEST=1
-EOF
-
 sh $PROGNAME up \
   --api-repository $REPOSITORY $TEMPDIR; it 1 \
   "Negative: Must be exit SIGN if not # --web-repository"
@@ -105,10 +101,15 @@ echo
 # Solution ERROR: Pool overlaps with other one on this address space
 #     docker network prune -f
 
+cat << EOF > $TEMPDIR/.env
+TEST=1
+EOF
+
 NODE_ENV=testing sh $PROGNAME up \
   -d \
   --domain example.com \
   --subnet 10.0.0.0/24 \
+  --env-file ./.env \
   --api-repository $REPOSITORY \
   --web-repository $REPOSITORY \
   $TEMPDIR | it "Successfully" \

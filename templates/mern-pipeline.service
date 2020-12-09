@@ -1,13 +1,17 @@
 [Unit]
-Description=MERN Pipeline
+Description=MERN Pipeline example.com
 After=network.target
 
 [Service]
 Type=forking
 RemainAfterExit=yes
-TimeoutStartUSec=10min
-ExecStart=mern-pipeline up -d /app
-ExecStop=mern-pipeline stop /app
+TimeoutSec=1000
+ExecStart=mern-pipeline up -d \
+        --domain example.com \
+        --api-repository https://github.com/woodger/mern-pipeline \
+        --web-repository https://github.com/woodger/mern-pipeline \
+        /var/www/example.com
+ExecStop=mern-pipeline stop /var/www/example.com
 
 [Install]
 WantedBy=multi-user.target
