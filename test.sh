@@ -30,10 +30,6 @@ function dotenv {
   grep $1 $2 | egrep -v "^#"| cut -f2 -d "="
 }
 
-sh $PROGNAME ; it 1 \
-  "Negative: Must be exit SIGN if less options"
-echo
-
 sh $PROGNAME \
   -h | it "Usage:" \
   "Positive: Must be show help # -h"
@@ -52,6 +48,10 @@ echo
 sh $PROGNAME \
   --version | it [0-9]+\.[0-9]+\.[0-9]+ \
   "Positive: Print version number # --version"
+echo
+
+sh $PROGNAME ; it 1 \
+  "Negative: Must be exit SIGN if COMMAND is empty"
 echo
 
 sh $PROGNAME stop $TEMPDIR; it 1 \

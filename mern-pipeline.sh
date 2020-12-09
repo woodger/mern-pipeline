@@ -5,7 +5,7 @@
 #   docker-compose
 #   lsof
 
-VERSION=1.0.1
+VERSION=1.0.2
 PROGNAME=$(basename $0)
 
 function usage {
@@ -161,6 +161,11 @@ while :; do
   esac
 done
 
+if [[ ! $1 ]]; then
+  echo "Expected COMMAND parameter"
+  exit 1
+fi
+
 if [[ ! $2 ]]; then
   echo "Expected DIR parameter is a build’s context"
   exit 1
@@ -222,17 +227,15 @@ else
   git clone $WEB_REPOSITORY ./web
 fi
 
-BULD_ENV=$(< /dev/urandom tr -dc a-z0-9 | head -c8)
-
-cat << EOF > ./$BULD_ENV
+cat << EOF > ./.env.mern-pipeline
 NODE_ENV=$NODE_ENV
 EOF
 
 if [[ -f $ENV_FILE ]]; then
-  cat $ENV_FILE >> ./$BULD_ENV
+  cat $ENV_FILE >> ./.env.mern-pipeline
 fi
 
-cat ./$BULD_ENV >> ./web/.env
+cat ./.env.mern-pipeline >> ./web/.env
 
 cat << EOF > ./nginx/nginx.conf
 server {
@@ -309,7 +312,7 @@ services:
       - MONGO_USERNAME=$MONGO_USERNAME
       - MONGO_PASSWORD=$MONGO_PASSWORD
     env_file:
-      - ./$BULD_ENV
+      - ./.env.mern-pipeline
     networks:
       - docker_default
   web:
@@ -337,6 +340,3 @@ if [[ $1 == "up" ]]; then
   docker-compose up --build $MODE
   exit
 fi
-
-usage
-exit 1
