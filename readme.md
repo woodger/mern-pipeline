@@ -120,7 +120,7 @@ You can added the MERN Pipeline in [systemd.service(5)](https://man7.org/linux/m
 Current user need `root` permission.
 
 ```sh
-cp ./mern-pipeline.service /etc/systemd/system/
+cp ./templates/mern-pipeline.service /etc/systemd/system/
 ```
 
 Next edit service file using any text editor. After installing new generators or updating the configuration, `systemctl daemon-reload` may be executed.
