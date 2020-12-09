@@ -7,9 +7,6 @@
 #     magenta = 45, cyan = 46, and white=47
 #
 # echo -e "\e[1;31m This is red text \e[0m"
-#
-# If ERROR: Pool overlaps with other one on this address space
-#     docker network prune
 
 PROGNAME=mern-pipeline.sh
 TEMPDIR=$(mktemp -d)
@@ -27,6 +24,10 @@ function it {
   fi
 
   echo -e "  \e[1;$message \e[0m " $2
+}
+
+function dotenv {
+  grep $1 $2 | egrep -v "^#"| cut -f2 -d "="
 }
 
 sh $PROGNAME ; it 1 \
@@ -86,7 +87,9 @@ sh $PROGNAME up $TEMPDIR; it 1 \
   "Negative: If # --env-file is empty, file .env should be exist in DIR build’s context"
 echo
 
-echo '' > $TEMPDIR/.env
+cat << EOF > $TEMPDIR/.env
+TEST=1
+EOF
 
 sh $PROGNAME up \
   --api-repository $REPOSITORY $TEMPDIR; it 1 \
@@ -98,14 +101,30 @@ sh $PROGNAME up \
   "Negative: Must be exit SIGN if not # --api-repository"
 echo
 
-sh $PROGNAME up \
+# NOTE
+# Solution ERROR: Pool overlaps with other one on this address space
+#     docker network prune -f
+
+NODE_ENV=testing sh $PROGNAME up \
   -d \
   --domain example.com \
   --subnet 10.0.0.0/24 \
   --api-repository $REPOSITORY \
   --web-repository $REPOSITORY \
   $TEMPDIR | it "Successfully" \
-  "Positive: Create and start containers in detached mode"
+  "Positive: Create and start containers in detached mode & NODE_ENV environment"
+echo
+
+stat $TEMPDIR/web/.env | it "File" \
+  "Positive: File .env should be extends in the Web directory"
+echo
+
+dotenv "NODE_ENV" $TEMPDIR/web/.env | it "testing" \
+  "Positive: File .env should be conents NODE_ENV value"
+echo
+
+dotenv "TEST" $TEMPDIR/web/.env | it "1" \
+  "Positive: File .env should be conents custom TEST value"
 echo
 
 sh $PROGNAME stop \
