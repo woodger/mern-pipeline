@@ -5,7 +5,7 @@
 #   docker-compose
 #   lsof
 
-VERSION=1.0.2
+VERSION=1.0.3
 PROGNAME=$(basename $0)
 
 function usage {
