@@ -112,9 +112,10 @@ NODE_ENV=testing sh $PROGNAME up \
   -d \
   --domain example.com \
   --subnet 10.0.0.0/24 \
-  --env-file ./.env \
   --api-repository $REPOSITORY \
   --web-repository $REPOSITORY \
+  --branch testing \
+  --env-file ./.env \
   $CTX > $BUFFER
 it "Successfully" \
   "Positive: Create and start containers in detached mode & NODE_ENV environment"
@@ -139,6 +140,8 @@ sh $PROGNAME stop \
   $CTX > $BUFFER
 it "" "Positive: Stop services"
 echo
+
+rm $BUFFER
 
 cd $CTX
 docker-compose rm -f
