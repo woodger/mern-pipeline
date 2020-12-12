@@ -64,38 +64,38 @@ it "Can't find a suitable configuration file" \
   "Negative: Must be exit SIGN if docker-compose.yml not be created" 1
 echo
 
-sh $PROGNAME up > $BUFFER 2>&1
+sh $PROGNAME start > $BUFFER 2>&1
 it "Expected DIR parameter" \
   "Negative: Must be exit SIGN if DIR parameter not found" 1
 echo
 
-sh $PROGNAME up \
+sh $PROGNAME start \
   --subnet 10.0.0.0 $CTX > $BUFFER 2>&1
 it "Expected the Docker subnet" \
   "Negative: Subnet should be in CIDR format" 1
 echo
 
-sh $PROGNAME up --subnet 10.0.0/32 $CTX > $BUFFER 2>&1
+sh $PROGNAME start --subnet 10.0.0/32 $CTX > $BUFFER 2>&1
 it "Expected the Docker subnet" \
   "Negative: Subnet should be in CIDR format" 1
 echo
 
-sh $PROGNAME up --domain example $CTX > $BUFFER 2>&1
+sh $PROGNAME start --domain example $CTX > $BUFFER 2>&1
 it "Expected domain" \
   "Negative: Domain should be RFC 882 standart" 1
 echo
 
-sh $PROGNAME up --env-file example $CTX > $BUFFER 2>&1
+sh $PROGNAME start --env-file example $CTX > $BUFFER 2>&1
 it "--env-file" \
   "Negative: If specified # --env-file, file .env should be exist" 1
 echo
 
-sh $PROGNAME up --api-repository $REPOSITORY $CTX > $BUFFER 2>&1
+sh $PROGNAME start --api-repository $REPOSITORY $CTX > $BUFFER 2>&1
 it "--web-repository" \
   "Negative: Must be exit SIGN if not # --web-repository" 1
 echo
 
-sh $PROGNAME up --web-repository $REPOSITORY $CTX > $BUFFER 2>&1
+sh $PROGNAME start --web-repository $REPOSITORY $CTX > $BUFFER 2>&1
 it "--api-repository" \
   "Negative: Must be exit SIGN if not # --api-repository" 1
 echo
@@ -108,7 +108,7 @@ cat << EOF > $CTX/.env
 TEST=1
 EOF
 
-NODE_ENV=testing sh $PROGNAME up \
+NODE_ENV=testing sh $PROGNAME start \
   -d \
   --domain example.com \
   --subnet 10.0.0.0/24 \
@@ -134,6 +134,19 @@ echo
 dotenv "TEST" $CTX/web/.env > $BUFFER
 it "1" \
   "Positive: File .env should be conents custom TEST value"
+echo
+
+NODE_ENV=testing sh $PROGNAME reload \
+  -d \
+  --domain example.com \
+  --subnet 10.0.0.0/24 \
+  --api-repository $REPOSITORY \
+  --web-repository $REPOSITORY \
+  --branch testing \
+  --env-file ./.env \
+  $CTX > $BUFFER
+it "Successfully" \
+  "Positive: Hot reload the Nginx service"
 echo
 
 sh $PROGNAME stop \

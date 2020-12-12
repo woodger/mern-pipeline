@@ -25,8 +25,9 @@ Usage:
 The DIR parameter is a build’s context
 
 Commands:
-  up                  Create and start containers
+  start               Create and start containers
   stop                Stop services
+  reload              Hot reload the Nginx service
 
 Options:
   -h, --help          Show this help
@@ -52,7 +53,7 @@ Options:
                       lowercase passphrase and vice versa.
 
 Examples:
-  sh mern-pipeline.sh up --domain example.com /app
+  sh mern-pipeline.sh start --domain example.com /app
   sh mern-pipeline.sh stop /app
 ```
 
