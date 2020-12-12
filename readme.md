@@ -1,5 +1,8 @@
 # MERN stack Pipeline on with Nginx
 
+[![License](https://img.shields.io/npm/l/express.svg)](https://github.com/woodger/pwd-fs/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/woodger/mern-pipeline.svg?branch=master)](https://travis-ci.org/woodger/mern-pipeline)
+
 The Pipeline is an open-source framework for run SOA applications in MERN stack.
 
 MERN (MongoDB, Express.js, React.js, Node.js) stack. Service-oriented architecture general purpose APIs that provide CRUD access to data via `http`.
