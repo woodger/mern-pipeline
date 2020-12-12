@@ -5,7 +5,7 @@
 #   docker-compose
 #   lsof
 
-VERSION=1.0.4
+VERSION=1.0.5
 PROGNAME=$(basename $0)
 
 function usage {
@@ -17,8 +17,9 @@ function usage {
   echo "The DIR parameter is a build’s context"
   echo
   echo "Commands:"
-  echo "  up                  Create and start containers"
+  echo "  start               Create and start containers"
   echo "  stop                Stop services"
+  echo "  reload              Hot reload the Nginx service"
   echo
   echo "Options:"
   echo "  -h, --help          Show this help"
@@ -44,7 +45,7 @@ function usage {
   echo "                      lowercase passphrase and vice versa."
   echo
   echo "Examples:"
-  echo "  sh "$PROGNAME" up --domain example.com /app"
+  echo "  sh "$PROGNAME" start --domain example.com /app"
   echo "  sh "$PROGNAME" stop /app"
 }
 
@@ -59,6 +60,10 @@ function freeport {
       break
     fi
   done
+}
+
+function forwardport {
+  docker-compose port $1 $2 | cut -f2 -d ":"
 }
 
 function signand {
@@ -211,13 +216,21 @@ if [[ ! $MONGO_PASSWORD ]]; then
   MONGO_PASSWORD=$(signand .mongo_password)
 fi
 
-for dir in ./nginx ./api ./web; do
+if [[ $1 == "reload" ]]; then
+  API_PORT=$(forwardport api 3000)
+  WEB_PORT=$(forwardport web 3000)
+  MONGO_PORT=$(forwardport mongo 27017)
+fi
+
+for dir in ./api ./web; do
   if [[ -d $dir ]]; then
     rm -rf $dir
   fi
 
   mkdir $dir
 done
+
+mkdir -p ./nginx
 
 if [[ $BRANCH ]]; then
   git clone -b $BRANCH --single-branch $API_REPOSITORY ./api
@@ -336,7 +349,10 @@ networks:
       - subnet: $SUBNET
 EOF
 
-if [[ $1 == "up" ]]; then
+if [[ $1 == "start" ]] || [[ $1 == "reload" ]]; then
   docker-compose up --build $MODE
   exit
 fi
+
+usage
+exit 1
