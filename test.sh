@@ -154,7 +154,10 @@ sh $PROGNAME stop \
 it "" "Positive: Stop services"
 echo
 
-rm $BUFFER
+NETWORK=$(docker network ls | grep tmp | cut -f1 -d " ")
 
+rm $BUFFER
 cd $CTX
-docker-compose rm -f
+
+docker-compose rm -f > /dev/null
+docker network rm $NETWORK > /dev/null
