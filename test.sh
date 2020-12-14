@@ -36,8 +36,9 @@ function dotenv {
   grep $1 $2 | egrep -v "^#"| cut -f2 -d "="
 }
 
-echo
+
 sh $PROGNAME -h > $BUFFER
+echo
 it "Usage:" "Positive: Must be show help # -h"
 echo
 
@@ -70,32 +71,52 @@ it "Expected DIR parameter" \
 echo
 
 sh $PROGNAME start \
-  --subnet 10.0.0.0 $CTX > $BUFFER 2>&1
+  --subnet 10.0.0.0 \
+  $CTX > $BUFFER 2>&1
+
 it "Expected the Docker subnet" \
   "Negative: Subnet should be in CIDR format" 1
 echo
 
-sh $PROGNAME start --subnet 10.0.0/32 $CTX > $BUFFER 2>&1
+sh $PROGNAME start \
+  --subnet 10.0.0/32 \
+  $CTX > $BUFFER 2>&1
+
 it "Expected the Docker subnet" \
   "Negative: Subnet should be in CIDR format" 1
 echo
 
-sh $PROGNAME start --domain example $CTX > $BUFFER 2>&1
+sh $PROGNAME start \
+  --domain example \
+  $CTX > $BUFFER 2>&1
+
 it "Expected domain" \
   "Negative: Domain should be RFC 882 standart" 1
 echo
 
-sh $PROGNAME start --env-file example $CTX > $BUFFER 2>&1
+sh $PROGNAME start \
+  --domain example.com \
+  --env-file unknown \
+  $CTX > $BUFFER 2>&1
+
 it "--env-file" \
   "Negative: If specified # --env-file, file .env should be exist" 1
 echo
 
-sh $PROGNAME start --api-repository $REPOSITORY $CTX > $BUFFER 2>&1
+sh $PROGNAME start \
+  --domain example.com \
+  --api-repository $REPOSITORY \
+  $CTX > $BUFFER 2>&1
+
 it "--web-repository" \
   "Negative: Must be exit SIGN if not # --web-repository" 1
 echo
 
-sh $PROGNAME start --web-repository $REPOSITORY $CTX > $BUFFER 2>&1
+sh $PROGNAME start \
+  --domain example.com \
+  --web-repository $REPOSITORY \
+  $CTX > $BUFFER 2>&1
+
 it "--api-repository" \
   "Negative: Must be exit SIGN if not # --api-repository" 1
 echo
@@ -117,6 +138,7 @@ NODE_ENV=testing sh $PROGNAME start \
   --branch testing \
   --env-file ./.env \
   $CTX > $BUFFER
+
 it "Successfully" \
   "Positive: Create and start containers in detached mode & NODE_ENV environment"
 echo
@@ -145,6 +167,7 @@ NODE_ENV=testing sh $PROGNAME reload \
   --branch testing \
   --env-file ./.env \
   $CTX > $BUFFER
+
 it "Successfully" \
   "Positive: Hot reload the Nginx service"
 echo

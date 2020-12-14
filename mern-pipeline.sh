@@ -26,7 +26,7 @@ function usage {
   echo "  -v, --version       Print version number"
   echo "  -d                  Detached mode: Run containers in the background"
   echo "                      print new container names"
-  echo "  --domain            Server name (default: localhost)"
+  echo "  --domain            Server name"
   echo "  --subnet            Docker subnet for container networking"
   echo "                      already configure. (default: 10.0.0.0/24)"
   echo "  --env-file          Read in a file of environment variables"
@@ -87,7 +87,7 @@ GETOPT_ARGS=$(getopt -o hvd -l "help","version","subnet:","domain:","env-file:",
 
 MODE=
 SUBNET="10.0.0.0/24"
-DOMAIN="localhost"
+DOMAIN=
 BRANCH=
 ENV_FILE=
 API_PORT=$(freeport)
@@ -230,7 +230,7 @@ for dir in ./api ./web; do
   mkdir $dir
 done
 
-mkdir -p ./nginx
+mkdir -p ./{nginx,mongo}
 
 if [[ $BRANCH ]]; then
   git clone -b $BRANCH --single-branch $API_REPOSITORY ./api
@@ -242,6 +242,7 @@ fi
 
 cat << EOF > ./.env.mern-pipeline
 NODE_ENV=$NODE_ENV
+SERVER_NAME=$DOMAIN
 EOF
 
 if [[ -f $ENV_FILE ]]; then
@@ -294,8 +295,8 @@ services:
       - "80:80"
     volumes:
       - ./nginx:/etc/nginx/conf.d
-      - ./storage:/var/storage
       - ./web/static:/var/static
+      - ./storage:/var/storage
     networks:
       - docker_default
   mongo:
@@ -303,6 +304,8 @@ services:
     restart: unless-stopped
     ports:
       - "$MONGO_PORT:27017"
+    volumes:
+      - ./mongo:/data/db
     environment:
       - MONGO_INITDB_ROOT_USERNAME=$MONGO_USERNAME
       - MONGO_INITDB_ROOT_PASSWORD=$MONGO_PASSWORD
@@ -317,6 +320,8 @@ services:
     restart: unless-stopped
     ports:
       - "$API_PORT:3000"
+    extra_hosts:
+      - "$DOMAIN:$GATEWAY"
     volumes:
       - ./storage:/app/storage
     environment:
