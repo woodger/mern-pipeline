@@ -36,7 +36,7 @@ Options:
   -v, --version       Print version number
   -d                  Detached mode: Run containers in the background
                       print new container names
-  --domain            Server name (default: localhost)
+  --domain            Server name
   --subnet            Docker subnet for container networking
                       already configure. (default: 10.0.0.0/24)
   --env-file          Read in a file of environment variables
@@ -74,7 +74,7 @@ NODE_ENV=development sh mern-pipeline.sh up \
 
 #### Domain
 
-Transfer server name. By default `localhost`
+Transfer server name.
 
 ```sh
 sh mern-pipeline.sh up \
@@ -104,6 +104,7 @@ For example.
 ```sh
 sh mern-pipeline.sh up \
   --subnet 10.0.0.0/16 \
+  --domain example.com \
   --api-repository https://github.com/<api> \
   --web-repository https://github.com/<web> \
   /app
