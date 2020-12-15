@@ -5,7 +5,7 @@
 #   docker-compose
 #   lsof
 
-VERSION=1.0.8
+VERSION=1.1.8
 PROGNAME=$(basename $0)
 
 function usage {
@@ -290,7 +290,7 @@ version: "3.3"
 services:
   nginx:
     image: nginx
-    restart: unless-stopped
+    restart: always
     ports:
       - "80:80"
     volumes:
@@ -301,7 +301,7 @@ services:
       - docker_default
   mongo:
     image: mongo
-    restart: unless-stopped
+    restart: always
     ports:
       - "$MONGO_PORT:27017"
     volumes:
@@ -317,7 +317,7 @@ services:
     depends_on:
       - nginx
       - mongo
-    restart: unless-stopped
+    restart: always
     ports:
       - "$API_PORT:3000"
     extra_hosts:
@@ -338,7 +338,7 @@ services:
       context: ./web
     depends_on:
       - api
-    restart: unless-stopped
+    restart: always
     ports:
       - "$WEB_PORT:3000"
     extra_hosts:
