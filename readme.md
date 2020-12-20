@@ -29,7 +29,7 @@ The DIR parameter is a build’s context
 Commands:
   start               Create and start containers
   stop                Stop services
-  reload              Hot reload the Nginx service
+  reload              Hot reload all services less change ports
 
 Options:
   -h, --help          Show this help
