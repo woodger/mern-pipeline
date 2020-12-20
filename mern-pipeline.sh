@@ -5,7 +5,7 @@
 #   docker-compose
 #   lsof
 
-VERSION=1.1.8
+VERSION=1.1.9
 PROGNAME=$(basename $0)
 
 function usage {
@@ -19,7 +19,7 @@ function usage {
   echo "Commands:"
   echo "  start               Create and start containers"
   echo "  stop                Stop services"
-  echo "  reload              Hot reload the Nginx service"
+  echo "  reload              Hot reload all services less change ports"
   echo
   echo "Options:"
   echo "  -h, --help          Show this help"
@@ -258,6 +258,7 @@ server {
 
   gzip on;
   gzip_types text/plain text/css application/javascript application/json image/svg+xml image/png image/jpeg image/gif;
+  client_max_body_size 1G;
 
   location /api {
     try_files \$uri @api;
@@ -322,6 +323,7 @@ services:
       - "$API_PORT:3000"
     extra_hosts:
       - "$DOMAIN:$GATEWAY"
+      - "hyper-office.ru:$GATEWAY"
     volumes:
       - ./storage:/app/storage
     environment:
