@@ -5,7 +5,7 @@
 #   docker-compose
 #   lsof
 
-VERSION=1.2.9
+VERSION=1.2.10
 PROGNAME=$(basename $0)
 
 function usage {
@@ -213,7 +213,7 @@ if [[ ! $WEB_REPOSITORY ]]; then
 fi
 
 if [[ ! $MONGO_PASSWORD ]]; then
-  MONGO_PASSWORD=$(signand .mongo_password)
+  MONGO_PASSWORD=$(signand ./mongo.srl)
 fi
 
 if [[ $1 == "reload" ]]; then
@@ -258,6 +258,7 @@ server {
 
   gzip on;
   gzip_types text/plain text/css application/javascript application/json image/svg+xml image/png image/jpeg image/gif;
+
   client_max_body_size 1G;
 
   location /api {
@@ -325,6 +326,7 @@ services:
       - "$DOMAIN:$GATEWAY"
       - "hyper-office.ru:$GATEWAY"
     volumes:
+      - ./ca-certificates:/usr/local/share/ca-certificates
       - ./storage:/app/storage
     environment:
       - NODE_ENV=$NODE_ENV
