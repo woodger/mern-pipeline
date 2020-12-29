@@ -1,4 +1,4 @@
-# MERN stack Pipeline on with Nginx
+# MERN stack Pipeline on with Nginx with TLS
 
 [![License](https://img.shields.io/npm/l/express.svg)](https://github.com/woodger/mern-pipeline/blob/master/LICENSE)
 

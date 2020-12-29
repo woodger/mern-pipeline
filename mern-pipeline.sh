@@ -7,7 +7,7 @@
 #   basename
 #   lsof
 
-VERSION=2.2.10
+VERSION=2.3.10
 PROGNAME=$(basename $0)
 
 function usage {
@@ -263,16 +263,16 @@ else
   git clone $WEB_REPOSITORY ./web
 fi
 
-cat << EOF > ./.env.mern-pipeline
+cat << EOF > ./.env.$PROGNAME
 NODE_ENV=$NODE_ENV
-SERVER_NAME=$DOMAIN
+DOMAIN=$DOMAIN
 EOF
 
 if [[ -f $ENV_FILE ]]; then
-  cat $ENV_FILE >> ./.env.mern-pipeline
+  cat $ENV_FILE >> ./.env.$PROGNAME
 fi
 
-cat ./.env.mern-pipeline >> ./web/.env
+cat ./.env.$PROGNAME >> ./web/.env
 
 cat << EOF > ./nginx/nginx.conf
 server {
@@ -283,7 +283,7 @@ server {
 }
 
 server {
-  listen 443 ssl;
+  listen 443 ssl http2;
   server_name www.$DOMAIN;
 
   ssl_certificate conf.d/$(basename $SSL_CERTIFICATE);
@@ -301,7 +301,6 @@ server {
 
   gzip on;
   gzip_types text/plain text/css application/javascript application/json image/svg+xml image/png image/jpeg image/gif;
-
   client_max_body_size 1G;
 
   location /api {
@@ -376,7 +375,7 @@ services:
       - MONGO_USERNAME=$MONGO_USERNAME
       - MONGO_PASSWORD=$MONGO_PASSWORD
     env_file:
-      - ./.env.mern-pipeline
+      - ./.env.$PROGNAME
     networks:
       - docker_default
   web:
