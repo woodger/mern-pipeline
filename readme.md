@@ -41,6 +41,10 @@ Options:
                       already configure. (default: 10.0.0.0/24)
   --env-file          Read in a file of environment variables
   --branch            Specify source git branch
+  --ssl-certificate   File must be contains: the primary certificate
+                      comes first, then the intermediate certificates
+  --ssl-key           Secret key in the PEM format must be placed in
+                      the same file
   --api-repository    Remote or local the Api service repository
   --web-repository    Remote or local the Web service repository
   --mongo-username    Create a new user and set that user's password.
