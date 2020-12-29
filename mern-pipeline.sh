@@ -2,7 +2,9 @@
 
 # general dependencies:
 #
+#   docker
 #   docker-compose
+#   basename
 #   lsof
 
 VERSION=1.2.10
@@ -31,6 +33,10 @@ function usage {
   echo "                      already configure. (default: 10.0.0.0/24)"
   echo "  --env-file          Read in a file of environment variables"
   echo "  --branch            Specify source git branch"
+  echo "  --ssl-certificate   File must be contains: the primary certificate"
+  echo "                      comes first, then the intermediate certificates"
+  echo "  --ssl-key           Secret key in the PEM format must be placed in"
+  echo "                      the same file"
   echo "  --api-repository    Remote or local the Api service repository"
   echo "  --web-repository    Remote or local the Web service repository"
   echo "  --mongo-username    Create a new user and set that user's password."
@@ -74,22 +80,15 @@ function signand {
   cat $1
 }
 
-for progname in docker docker-compose lsof; do
-  which $progname &> /dev/null
-
-  if [[ $? == 1 ]]; then
-    echo "You required install: "$progname
-    exit 1
-  fi
-done
-
-GETOPT_ARGS=$(getopt -o hvd -l "help","version","subnet:","domain:","env-file:","branch:","api-repository:","web-repository:","mongo-username:","mongo-password:" -n "$PROGNAME" -- "$@")
+GETOPT_ARGS=$(getopt -o hvd -l "help","version","subnet:","domain:","env-file:","branch:","ssl-certificate:","ssl-key:","api-repository:","web-repository:","mongo-username:","mongo-password:" -n "$PROGNAME" -- "$@")
 
 MODE=
 SUBNET="10.0.0.0/24"
 DOMAIN=
 BRANCH=
 ENV_FILE=
+SSL_CERTIFICATE=
+SSL_KEY=
 API_PORT=$(freeport)
 API_REPOSITORY=
 WEB_PORT=$(freeport)
@@ -137,6 +136,16 @@ while :; do
     --env-file)
       shift
       ENV_FILE=$1
+      shift
+      ;;
+    --ssl-certificate)
+      shift
+      SSL_CERTIFICATE=$1
+      shift
+      ;;
+    --ssl-key)
+      shift
+      SSL_KEY=$1
       shift
       ;;
     --api-repository)
@@ -202,6 +211,16 @@ if [[ $ENV_FILE ]] && [[ ! -f $ENV_FILE ]]; then
   exit 1
 fi
 
+if [[ ! -f $SSL_CERTIFICATE ]]; then
+  echo "The file specified in --ssl-certificate was not found"
+  exit 1
+fi
+
+if [[ ! -f $SSL_KEY ]]; then
+  echo "The file specified in --ssl-key was not found"
+  exit 1
+fi
+
 if [[ ! $API_REPOSITORY ]]; then
   echo "Parameter --api-repository is required"
   exit 1
@@ -222,15 +241,19 @@ if [[ $1 == "reload" ]]; then
   MONGO_PORT=$(forwardport mongo 27017)
 fi
 
-for dir in ./api ./web; do
-  if [[ -d $dir ]]; then
-    rm -rf $dir
+for item in ./api ./web; do
+  if [[ -d $item ]]; then
+    rm -rf $item
   fi
 
-  mkdir $dir
+  mkdir $item
 done
 
 mkdir -p ./{nginx,mongo}
+
+for item in $SSL_CERTIFICATE $SSL_KEY; do
+  cp $item ./nginx
+done
 
 if [[ $BRANCH ]]; then
   git clone -b $BRANCH --single-branch $API_REPOSITORY ./api
@@ -254,7 +277,27 @@ cat ./.env.mern-pipeline >> ./web/.env
 cat << EOF > ./nginx/nginx.conf
 server {
   listen 80;
+  server_name $DOMAIN www.$DOMAIN;
+
+  return 301 https://\$host\$request_uri;
+}
+
+server {
+  listen 443 ssl;
+  server_name www.$DOMAIN;
+
+  ssl_certificate conf.d/$(basename $SSL_CERTIFICATE);
+  ssl_certificate_key conf.d/$(basename $SSL_KEY);
+
+  return 301 https://\$host\$request_uri;
+}
+
+server {
+  listen 443 ssl http2;
   server_name $DOMAIN;
+
+  ssl_certificate conf.d/$(basename $SSL_CERTIFICATE);
+  ssl_certificate_key conf.d/$(basename $SSL_KEY);
 
   gzip on;
   gzip_types text/plain text/css application/javascript application/json image/svg+xml image/png image/jpeg image/gif;
@@ -273,14 +316,14 @@ server {
 
   location @api {
     proxy_pass http://$GATEWAY:$API_PORT;
-    proxy_set_header Host $DOMAIN;
+    proxy_set_header Host \$host;
     proxy_set_header Origin \$scheme://\$host;
     proxy_http_version 1.1;
   }
 
   location @web {
     proxy_pass http://$GATEWAY:$WEB_PORT;
-    proxy_set_header Host $DOMAIN;
+    proxy_set_header Host \$host;
     proxy_set_header Origin \$scheme://\$host;
     proxy_http_version 1.1;
   }
@@ -292,9 +335,12 @@ version: "3.3"
 services:
   nginx:
     image: nginx
+    depends_on:
+      - web
     restart: always
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx:/etc/nginx/conf.d
       - ./web/static:/var/static
@@ -317,14 +363,10 @@ services:
     build:
       context: ./api
     depends_on:
-      - nginx
       - mongo
     restart: always
     ports:
       - "$API_PORT:3000"
-    extra_hosts:
-      - "$DOMAIN:$GATEWAY"
-      - "hyper-office.ru:$GATEWAY"
     volumes:
       - ./ca-certificates:/usr/local/share/ca-certificates
       - ./storage:/app/storage
@@ -345,8 +387,8 @@ services:
     restart: always
     ports:
       - "$WEB_PORT:3000"
-    extra_hosts:
-      - "$DOMAIN:$GATEWAY"
+    volumes:
+      - ./ca-certificates:/usr/local/share/ca-certificates
     networks:
       - docker_default
 networks:
