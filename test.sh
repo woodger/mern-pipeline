@@ -36,6 +36,18 @@ function dotenv {
   grep $1 $2 | egrep -v "^#"| cut -f2 -d "="
 }
 
+function freeport {
+  local port
+
+  while :; do
+    port=$(shuf -i 1024-49151 -n 1)
+
+    if [[ ! $(lsof -i :$port) ]]; then
+      echo $port
+      break
+    fi
+  done
+}
 
 sh $PROGNAME -h > $BUFFER
 echo
@@ -71,7 +83,7 @@ it "Expected DIR parameter" \
 echo
 
 sh $PROGNAME start \
-  --subnet 10.0.0.0 \
+  --subnet=10.0.0.0 \
   $CTX > $BUFFER 2>&1
 
 it "Expected the Docker subnet" \
@@ -79,7 +91,7 @@ it "Expected the Docker subnet" \
 echo
 
 sh $PROGNAME start \
-  --subnet 10.0.0/32 \
+  --subnet=10.0.0/32 \
   $CTX > $BUFFER 2>&1
 
 it "Expected the Docker subnet" \
@@ -87,16 +99,23 @@ it "Expected the Docker subnet" \
 echo
 
 sh $PROGNAME start \
-  --domain example \
+  --port=1023 \
   $CTX > $BUFFER 2>&1
 
-it "Expected domain" \
-  "Negative: Domain should be RFC 882 standart" 1
+it "Expected ports" \
+  "Negative: Ports are those from 1024" 1
 echo
 
 sh $PROGNAME start \
-  --domain example.com \
-  --env-file unknown \
+  --port=49152 \
+  $CTX > $BUFFER 2>&1
+
+it "Expected ports" \
+  "Negative: Ports are to 49151" 1
+echo
+
+sh $PROGNAME start \
+  --env-file=unknown \
   $CTX > $BUFFER 2>&1
 
 it "--env-file" \
@@ -104,8 +123,7 @@ it "--env-file" \
 echo
 
 sh $PROGNAME start \
-  --domain example.com \
-  --api-repository $REPOSITORY \
+  --api-repository=$REPOSITORY \
   $CTX > $BUFFER 2>&1
 
 it "--web-repository" \
@@ -113,8 +131,7 @@ it "--web-repository" \
 echo
 
 sh $PROGNAME start \
-  --domain example.com \
-  --web-repository $REPOSITORY \
+  --web-repository=$REPOSITORY \
   $CTX > $BUFFER 2>&1
 
 it "--api-repository" \
@@ -131,12 +148,11 @@ EOF
 
 NODE_ENV=testing sh $PROGNAME start \
   -d \
-  --domain example.com \
-  --subnet 10.0.0.0/24 \
-  --api-repository $REPOSITORY \
-  --web-repository $REPOSITORY \
-  --branch testing \
-  --env-file ./.env \
+  --subnet=10.0.0.0/24 \
+  --branch=testing \
+  --api-repository=$REPOSITORY \
+  --web-repository=$REPOSITORY \
+  --env-file=./.env \
   $CTX > $BUFFER
 
 it "Successfully" \
@@ -160,12 +176,10 @@ echo
 
 NODE_ENV=testing sh $PROGNAME reload \
   -d \
-  --domain example.com \
-  --subnet 10.0.0.0/24 \
-  --api-repository $REPOSITORY \
-  --web-repository $REPOSITORY \
-  --branch testing \
-  --env-file ./.env \
+  --api-repository=$REPOSITORY \
+  --web-repository=$REPOSITORY \
+  --branch=testing \
+  --env-file=./.env \
   $CTX > $BUFFER
 
 it "Successfully" \

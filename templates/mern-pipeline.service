@@ -7,12 +7,12 @@ Type=forking
 RemainAfterExit=yes
 TimeoutSec=1000
 ExecStart=mern-pipeline start -d \
-  --domain example.com \
+  --port 8080 \
   --api-repository https://github.com/woodger/mern-pipeline \
   --web-repository https://github.com/woodger/mern-pipeline \
   /var/www/example.com
 ExecReload=mern-pipeline reload -d \
-  --domain example.com \
+  --port 8080 \
   --api-repository https://github.com/woodger/mern-pipeline \
   --web-repository https://github.com/woodger/mern-pipeline \
   /var/www/example.com
