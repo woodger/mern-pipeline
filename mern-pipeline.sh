@@ -7,7 +7,7 @@
 #   basename
 #   lsof
 
-VERSION=2.3.10
+VERSION=3.3.10
 PROGNAME=$(basename $0)
 
 function usage {
@@ -24,25 +24,21 @@ function usage {
   echo "  reload              Hot reload all services less change ports"
   echo
   echo "Options:"
-  echo "  -h, --help          Show this help"
+  echo "  -h, --help          Display more information on a specific command"
   echo "  -v, --version       Print version number"
   echo "  -d                  Detached mode: Run containers in the background"
   echo "                      print new container names"
-  echo "  --domain            Server name"
-  echo "  --subnet            Docker subnet for container networking"
-  echo "                      already configure. (default: 10.0.0.0/24)"
+  echo "  -p, --port          (Default: 8080) Port of listen server"
+  echo "  --subnet            (Default: 10.0.0.0/24) Docker subnet for"
+  echo "                      container networking. Already configure"
   echo "  --env-file          Read in a file of environment variables"
   echo "  --branch            Specify source git branch"
-  echo "  --ssl-certificate   File must be contains: the primary certificate"
-  echo "                      comes first, then the intermediate certificates"
-  echo "  --ssl-key           Secret key in the PEM format must be placed in"
-  echo "                      the same file"
   echo "  --api-repository    Remote or local the Api service repository"
   echo "  --web-repository    Remote or local the Web service repository"
-  echo "  --mongo-username    Create a new user and set that user's password."
-  echo "                      This user is created in the admin authentication"
-  echo "                      database and given the role of root, which"
-  echo "                      is a superuser role (default: admin)"
+  echo "  --mongo-username    (Default: admin) Create a new user and set that"
+  echo "                      user's password. This user is created in"
+  echo "                      the admin authentication database and given"
+  echo "                      the role of root, which is a superuser role"
   echo "  --mongo-password    Use than 8 digits passphrase"
   echo "                      Even a long passphrase can be quite useless"
   echo "                      if it is a regular word from a dictionary."
@@ -51,7 +47,7 @@ function usage {
   echo "                      lowercase passphrase and vice versa."
   echo
   echo "Examples:"
-  echo "  sh "$PROGNAME" start --domain example.com /app"
+  echo "  sh "$PROGNAME" start -p 8080 /app"
   echo "  sh "$PROGNAME" stop /app"
 }
 
@@ -80,15 +76,13 @@ function signand {
   cat $1
 }
 
-GETOPT_ARGS=$(getopt -o hvd -l "help","version","subnet:","domain:","env-file:","branch:","ssl-certificate:","ssl-key:","api-repository:","web-repository:","mongo-username:","mongo-password:" -n "$PROGNAME" -- "$@")
+GETOPT_ARGS=$(getopt -o hvdp -l "help","version","subnet:","port:","env-file:","branch:","api-repository:","web-repository:","mongo-username:","mongo-password:" -n "$PROGNAME" -- "$@")
 
 MODE=
 SUBNET="10.0.0.0/24"
-DOMAIN=
+LISTEN_PORT=8080
 BRANCH=
 ENV_FILE=
-SSL_CERTIFICATE=
-SSL_KEY=
 API_PORT=$(freeport)
 API_REPOSITORY=
 WEB_PORT=$(freeport)
@@ -123,9 +117,9 @@ while :; do
       SUBNET=$1
       shift
       ;;
-    --domain)
+    -p|--port)
       shift
-      DOMAIN=$1
+      LISTEN_PORT=$1
       shift
       ;;
     --branch)
@@ -136,16 +130,6 @@ while :; do
     --env-file)
       shift
       ENV_FILE=$1
-      shift
-      ;;
-    --ssl-certificate)
-      shift
-      SSL_CERTIFICATE=$1
-      shift
-      ;;
-    --ssl-key)
-      shift
-      SSL_KEY=$1
       shift
       ;;
     --api-repository)
@@ -200,24 +184,13 @@ fi
 
 GATEWAY=${SUBNET%.*}.1
 
-if [[ ! $DOMAIN == "localhost" ]] && [[ ! $DOMAIN =~ [-a-z0-9_]+\.[a-z]{2,} ]]
-then
-  echo "Expected domain by following the RFC 882 standart"
+if (( $LISTEN_PORT < 1024 )) || (( $LISTEN_PORT > 49151 )); then
+  echo "Expected ports are those from 1024 through 49151"
   exit 1
 fi
 
 if [[ $ENV_FILE ]] && [[ ! -f $ENV_FILE ]]; then
   echo "The file specified in --env-file was not found"
-  exit 1
-fi
-
-if [[ ! -f $SSL_CERTIFICATE ]]; then
-  echo "The file specified in --ssl-certificate was not found"
-  exit 1
-fi
-
-if [[ ! -f $SSL_KEY ]]; then
-  echo "The file specified in --ssl-key was not found"
   exit 1
 fi
 
@@ -251,10 +224,6 @@ done
 
 mkdir -p ./{nginx,mongo}
 
-for item in $SSL_CERTIFICATE $SSL_KEY; do
-  cp $item ./nginx
-done
-
 if [[ $BRANCH ]]; then
   git clone -b $BRANCH --single-branch $API_REPOSITORY ./api
   git clone -b $BRANCH --single-branch $WEB_REPOSITORY ./web
@@ -265,7 +234,6 @@ fi
 
 cat << EOF > ./.env.$PROGNAME
 NODE_ENV=$NODE_ENV
-DOMAIN=$DOMAIN
 EOF
 
 if [[ -f $ENV_FILE ]]; then
@@ -276,31 +244,11 @@ cat ./.env.$PROGNAME >> ./web/.env
 
 cat << EOF > ./nginx/nginx.conf
 server {
-  listen 80;
-  server_name $DOMAIN www.$DOMAIN;
-
-  return 301 https://\$host\$request_uri;
-}
-
-server {
-  listen 443 ssl http2;
-  server_name www.$DOMAIN;
-
-  ssl_certificate conf.d/$(basename $SSL_CERTIFICATE);
-  ssl_certificate_key conf.d/$(basename $SSL_KEY);
-
-  return 301 https://\$host\$request_uri;
-}
-
-server {
-  listen 443 ssl http2;
-  server_name $DOMAIN;
-
-  ssl_certificate conf.d/$(basename $SSL_CERTIFICATE);
-  ssl_certificate_key conf.d/$(basename $SSL_KEY);
+  listen $LISTEN_PORT;
 
   gzip on;
-  gzip_types text/plain text/css application/javascript application/json image/svg+xml image/png image/jpeg image/gif;
+  gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+
   client_max_body_size 1G;
 
   location /api {
@@ -336,10 +284,9 @@ services:
     image: nginx
     depends_on:
       - web
-    restart: always
+    restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - "$LISTEN_PORT:80"
     volumes:
       - ./nginx:/etc/nginx/conf.d
       - ./web/static:/var/static
@@ -348,7 +295,7 @@ services:
       - docker_default
   mongo:
     image: mongo
-    restart: always
+    restart: unless-stopped
     ports:
       - "$MONGO_PORT:27017"
     volumes:
@@ -363,7 +310,7 @@ services:
       context: ./api
     depends_on:
       - mongo
-    restart: always
+    restart: unless-stopped
     ports:
       - "$API_PORT:3000"
     volumes:
@@ -383,7 +330,7 @@ services:
       context: ./web
     depends_on:
       - api
-    restart: always
+    restart: unless-stopped
     ports:
       - "$WEB_PORT:3000"
     volumes:

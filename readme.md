@@ -1,4 +1,4 @@
-# MERN stack Pipeline on with Nginx with TLS
+# MERN stack Pipeline on with Nginx
 
 [![License](https://img.shields.io/npm/l/express.svg)](https://github.com/woodger/mern-pipeline/blob/master/LICENSE)
 
@@ -32,25 +32,21 @@ Commands:
   reload              Hot reload all services less change ports
 
 Options:
-  -h, --help          Show this help
+  -h, --help          Display more information on a specific command
   -v, --version       Print version number
   -d                  Detached mode: Run containers in the background
                       print new container names
-  --domain            Server name
-  --subnet            Docker subnet for container networking
-                      already configure. (default: 10.0.0.0/24)
+  -p, --port          (Default: 8080) Port of listen server
+  --subnet            (Default: 10.0.0.0/24) Docker subnet for
+                      container networking. Already configure
   --env-file          Read in a file of environment variables
   --branch            Specify source git branch
-  --ssl-certificate   File must be contains: the primary certificate
-                      comes first, then the intermediate certificates
-  --ssl-key           Secret key in the PEM format must be placed in
-                      the same file
   --api-repository    Remote or local the Api service repository
   --web-repository    Remote or local the Web service repository
-  --mongo-username    Create a new user and set that user's password.
-                      This user is created in the admin authentication
-                      database and given the role of root, which
-                      is a superuser role (default: admin)
+  --mongo-username    (Default: admin) Create a new user and set that
+                      user's password. This user is created in
+                      the admin authentication database and given
+                      the role of root, which is a superuser role
   --mongo-password    Use than 8 digits passphrase
                       Even a long passphrase can be quite useless
                       if it is a regular word from a dictionary.
@@ -59,7 +55,7 @@ Options:
                       lowercase passphrase and vice versa.
 
 Examples:
-  sh mern-pipeline.sh start --domain example.com /app
+  sh mern-pipeline.sh start -p 8080 /app
   sh mern-pipeline.sh stop /app
 ```
 
@@ -76,28 +72,17 @@ NODE_ENV=development sh mern-pipeline.sh up \
   /app
 ```
 
-#### Domain
+#### Port
 
-Transfer server name.
+Listen port. Use any free port are those from 1024 through 49151.
 
 ```sh
 sh mern-pipeline.sh up \
-  --domain example.com \
+  --port 8081 \
   --api-repository https://github.com/<api> \
   --web-repository https://github.com/<web> \
   /app
 ```
-
-If you use `--domain`, so make sure the DNS is true resolved locally or remotely, depending on your setup. Setup Local DNS Using `/etc/hosts` File in Unix like systems.
-For the purpose of this manual, we will be using the following domain, hostnames and IP addresses (use values that apply to your local setting).
-
-Single run in terminal:
-
-```sh
-echo "127.0.0.1 example.com" >> /etc/hosts
-```
-
-[nslookup(1)](https://linux.die.net/man/1/nslookup)
 
 #### Subnet
 
@@ -108,7 +93,6 @@ For example.
 ```sh
 sh mern-pipeline.sh up \
   --subnet 10.0.0.0/16 \
-  --domain example.com \
   --api-repository https://github.com/<api> \
   --web-repository https://github.com/<web> \
   /app
@@ -128,7 +112,7 @@ You can added the MERN Pipeline in [systemd.service(5)](https://man7.org/linux/m
 Current user need `root` permission.
 
 ```sh
-cp ./templates/mern-pipeline.service /etc/systemd/system/
+cp ./templates/mern-pipeline.service /etc/systemd/system/<example.com>.service
 ```
 
 Next edit service file using any text editor. After installing new generators or updating the configuration, `systemctl daemon-reload` may be executed.
@@ -140,5 +124,5 @@ systemctl daemon-reload
 Now try run you application in pipeline production.
 
 ```sh
-systemctl start mern-pipeline
+systemctl start <example.com>.service
 ```
