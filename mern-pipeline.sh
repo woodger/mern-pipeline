@@ -232,6 +232,10 @@ else
   git clone $WEB_REPOSITORY ./web
 fi
 
+if [[ ! $ENV_FILE ]] && [[ -f ./.env ]]; then
+  ENV_FILE=./.env
+fi
+
 cat << EOF > ./.env.$PROGNAME
 NODE_ENV=$NODE_ENV
 EOF
@@ -244,12 +248,13 @@ cat ./.env.$PROGNAME >> ./web/.env
 
 cat << EOF > ./nginx/nginx.conf
 server {
-  listen $LISTEN_PORT;
+  listen 80;
+  listen [::]:80;
 
   gzip on;
   gzip_types text/plain text/css application/javascript application/json image/svg+xml;
 
-  client_max_body_size 1G;
+  client_max_body_size 2G;
 
   location /api {
     try_files \$uri @api;
@@ -263,16 +268,10 @@ server {
 
   location @api {
     proxy_pass http://$GATEWAY:$API_PORT;
-    proxy_set_header Host \$host;
-    proxy_set_header Origin \$scheme://\$host;
-    proxy_http_version 1.1;
   }
 
   location @web {
     proxy_pass http://$GATEWAY:$WEB_PORT;
-    proxy_set_header Host \$host;
-    proxy_set_header Origin \$scheme://\$host;
-    proxy_http_version 1.1;
   }
 }
 EOF

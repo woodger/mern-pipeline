@@ -152,7 +152,6 @@ NODE_ENV=testing sh $PROGNAME start \
   --branch=testing \
   --api-repository=$REPOSITORY \
   --web-repository=$REPOSITORY \
-  --env-file=./.env \
   $CTX > $BUFFER
 
 it "Successfully" \
@@ -179,7 +178,6 @@ NODE_ENV=testing sh $PROGNAME reload \
   --api-repository=$REPOSITORY \
   --web-repository=$REPOSITORY \
   --branch=testing \
-  --env-file=./.env \
   $CTX > $BUFFER
 
 it "Successfully" \
