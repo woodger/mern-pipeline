@@ -9,9 +9,6 @@
 # echo -e "\e[1;31m This is red text \e[0m"
 
 PROGNAME=./mern-pipeline.sh
-BUFFER=./.buffer.test
-CTX=$(mktemp -d)
-REPOSITORY=$(git remote get-url --all origin)
 
 function it {
   local status=$? output=$(cat $BUFFER) message
@@ -30,6 +27,8 @@ function it {
     echo -e "\e[1;31m ✗ \e[0m "$2
     echo -e "\e[1;45m $output \e[0m"
   fi
+
+  rm $BUFFER
 }
 
 function dotenv {
@@ -48,6 +47,11 @@ function freeport {
     fi
   done
 }
+
+BUFFER=./.buffer.test
+CTX=$(mktemp -d)
+REPOSITORY=$(git remote get-url --all origin)
+LISTEN_PORT=$(freeport)
 
 sh $PROGNAME -h > $BUFFER
 echo
@@ -83,7 +87,7 @@ it "Expected DIR parameter" \
 echo
 
 sh $PROGNAME start \
-  --subnet=10.0.0.0 \
+  --subnet 10.0.0.0 \
   $CTX > $BUFFER 2>&1
 
 it "Expected the Docker subnet" \
@@ -91,7 +95,7 @@ it "Expected the Docker subnet" \
 echo
 
 sh $PROGNAME start \
-  --subnet=10.0.0/32 \
+  --subnet 10.0.0/32 \
   $CTX > $BUFFER 2>&1
 
 it "Expected the Docker subnet" \
@@ -99,7 +103,7 @@ it "Expected the Docker subnet" \
 echo
 
 sh $PROGNAME start \
-  --port=1023 \
+  --port 1023 \
   $CTX > $BUFFER 2>&1
 
 it "Expected ports" \
@@ -107,7 +111,7 @@ it "Expected ports" \
 echo
 
 sh $PROGNAME start \
-  --port=49152 \
+  --port 49152 \
   $CTX > $BUFFER 2>&1
 
 it "Expected ports" \
@@ -115,7 +119,7 @@ it "Expected ports" \
 echo
 
 sh $PROGNAME start \
-  --env-file=unknown \
+  --env-file unknown \
   $CTX > $BUFFER 2>&1
 
 it "--env-file" \
@@ -123,7 +127,7 @@ it "--env-file" \
 echo
 
 sh $PROGNAME start \
-  --api-repository=$REPOSITORY \
+  --api-repository $REPOSITORY \
   $CTX > $BUFFER 2>&1
 
 it "--web-repository" \
@@ -131,7 +135,7 @@ it "--web-repository" \
 echo
 
 sh $PROGNAME start \
-  --web-repository=$REPOSITORY \
+  --web-repository $REPOSITORY \
   $CTX > $BUFFER 2>&1
 
 it "--api-repository" \
@@ -148,10 +152,11 @@ EOF
 
 NODE_ENV=testing sh $PROGNAME start \
   -d \
-  --subnet=10.0.0.0/24 \
-  --branch=testing \
-  --api-repository=$REPOSITORY \
-  --web-repository=$REPOSITORY \
+  --port $LISTEN_PORT \
+  --subnet 10.0.0.0/24 \
+  --branch testing \
+  --api-repository $REPOSITORY \
+  --web-repository $REPOSITORY \
   $CTX > $BUFFER
 
 it "Successfully" \
@@ -175,23 +180,27 @@ echo
 
 NODE_ENV=testing sh $PROGNAME reload \
   -d \
-  --api-repository=$REPOSITORY \
-  --web-repository=$REPOSITORY \
-  --branch=testing \
+  --port $LISTEN_PORT \
+  --api-repository $REPOSITORY \
+  --web-repository $REPOSITORY \
+  --branch testing \
   $CTX > $BUFFER
 
 it "Successfully" \
   "Positive: Hot reload the Nginx service"
 echo
 
-sh $PROGNAME stop \
-  $CTX > $BUFFER
+curl --head http://localhost:$LISTEN_PORT > $BUFFER
+it "Server:" \
+  "Positive: Application containers is started"
+echo
+
+sh $PROGNAME stop $CTX > $BUFFER
 it "" "Positive: Stop services"
 echo
 
 NETWORK=$(docker network ls | grep tmp | cut -f1 -d " ")
 
-rm $BUFFER
 cd $CTX
 
 docker-compose rm -f > /dev/null

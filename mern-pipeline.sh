@@ -7,7 +7,7 @@
 #   basename
 #   lsof
 
-VERSION=3.3.10
+VERSION=3.4.10
 PROGNAME=$(basename $0)
 
 function usage {
@@ -283,7 +283,6 @@ services:
     image: nginx
     depends_on:
       - web
-    restart: unless-stopped
     ports:
       - "$LISTEN_PORT:80"
     volumes:
@@ -294,7 +293,6 @@ services:
       - docker_default
   mongo:
     image: mongo
-    restart: unless-stopped
     ports:
       - "$MONGO_PORT:27017"
     volumes:
@@ -309,7 +307,6 @@ services:
       context: ./api
     depends_on:
       - mongo
-    restart: unless-stopped
     ports:
       - "$API_PORT:3000"
     volumes:
@@ -329,7 +326,6 @@ services:
       context: ./web
     depends_on:
       - api
-    restart: unless-stopped
     ports:
       - "$WEB_PORT:3000"
     volumes:
