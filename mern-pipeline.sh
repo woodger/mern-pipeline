@@ -204,8 +204,10 @@ if [[ ! $WEB_REPOSITORY ]]; then
   exit 1
 fi
 
+mkdir -p ./{nginx,mongo}
+
 if [[ ! $MONGO_PASSWORD ]]; then
-  MONGO_PASSWORD=$(signand ./mongo.srl)
+  MONGO_PASSWORD=$(signand ./mongo/mongo.srl)
 fi
 
 if [[ $1 == "reload" ]]; then
@@ -221,8 +223,6 @@ for item in ./api ./web; do
 
   mkdir $item
 done
-
-mkdir -p ./{nginx,mongo}
 
 if [[ $BRANCH ]]; then
   git clone -b $BRANCH --single-branch $API_REPOSITORY ./api
