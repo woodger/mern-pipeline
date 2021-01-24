@@ -7,7 +7,7 @@
 #   basename
 #   lsof
 
-VERSION=3.4.10
+VERSION=3.5.10
 PROGNAME=$(basename $0)
 
 function usage {
