@@ -291,8 +291,6 @@ services:
     image: mcr.microsoft.com/mssql/server
     ports:
       - "$MSSQL_PORT:1433"
-    volumes:
-      - ./mssql:/var/opt/mssql
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=$MSSQL_PASSWORD
