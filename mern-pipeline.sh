@@ -35,11 +35,11 @@ function usage {
   echo "  --branch            Specify source git branch"
   echo "  --api-repository    Remote or local the Api service repository"
   echo "  --web-repository    Remote or local the Web service repository"
-  echo "  --mongo-username    (Default: admin) Create a new user and set that"
+  echo "  --db-username       (Default: admin) Create a new user and set that"
   echo "                      user's password. This user is created in"
   echo "                      the admin authentication database and given"
   echo "                      the role of root, which is a superuser role"
-  echo "  --mongo-password    Use than 8 digits passphrase"
+  echo "  --db-password       Use than 8 digits passphrase"
   echo "                      Even a long passphrase can be quite useless"
   echo "                      if it is a regular word from a dictionary."
   echo "                      Randomize letters, numbers, and symbols mixing"
@@ -76,7 +76,7 @@ function signand {
   cat $1
 }
 
-GETOPT_ARGS=$(getopt -o hvdp -l "help","version","subnet:","port:","env-file:","branch:","api-repository:","web-repository:","mongo-username:","mongo-password:" -n "$PROGNAME" -- "$@")
+GETOPT_ARGS=$(getopt -o hvdp -l "help","version","subnet:","port:","env-file:","branch:","api-repository:","web-repository:","db-username:","db-password:" -n "$PROGNAME" -- "$@")
 
 MODE=
 SUBNET="10.0.0.0/24"
@@ -87,9 +87,9 @@ API_PORT=$(freeport)
 API_REPOSITORY=
 WEB_PORT=$(freeport)
 WEB_REPOSITORY=
-MONGO_PORT=$(freeport)
-MONGO_USERNAME="admin"
-MONGO_PASSWORD=
+MSSQL_PORT=$(freeport)
+MSSQL_USERNAME="admin"
+MSSQL_PASSWORD=
 
 if [[ $? != 0 ]]; then
   usage
@@ -142,14 +142,14 @@ while :; do
       WEB_REPOSITORY=$1
       shift
       ;;
-    --mongo-username)
+    --db-username)
       shift
-      MONGO_USERNAME=$1
+      MSSQL_USERNAME=$1
       shift
       ;;
-    --mongo-password)
+    --db-password)
       shift
-      MONGO_PASSWORD=$1
+      MSSQL_PASSWORD=$1
       shift
       ;;
     --)
@@ -204,16 +204,16 @@ if [[ ! $WEB_REPOSITORY ]]; then
   exit 1
 fi
 
-mkdir -p ./{nginx,mongo}
+mkdir -p ./{nginx,database}
 
-if [[ ! $MONGO_PASSWORD ]]; then
-  MONGO_PASSWORD=$(signand ./mongo/mongo.srl)
+if [[ ! $MSSQL_PASSWORD ]]; then
+  MSSQL_PASSWORD=$(signand ./database/database.srl)
 fi
 
 if [[ $1 == "reload" ]]; then
   API_PORT=$(forwardport api 3000)
   WEB_PORT=$(forwardport web 3000)
-  MONGO_PORT=$(forwardport mongo 27017)
+  MSSQL_PORT=$(forwardport database 1433)
 fi
 
 for item in ./api ./web; do
@@ -238,6 +238,7 @@ fi
 
 cat << EOF > ./.env.$PROGNAME
 NODE_ENV=$NODE_ENV
+MSSQL_USERNAME=sa
 EOF
 
 if [[ -f $ENV_FILE ]]; then
@@ -254,7 +255,7 @@ server {
   gzip on;
   gzip_types text/plain text/css application/javascript application/json image/svg+xml;
 
-  client_max_body_size 2G;
+  client_max_body_size 1G;
 
   location /api {
     try_files \$uri @api;
@@ -291,22 +292,22 @@ services:
       - ./storage:/var/storage
     networks:
       - docker_default
-  mongo:
-    image: mongo
+  database:
+    image: mssql
     ports:
-      - "$MONGO_PORT:27017"
+      - "$MSSQL_PORT:1433"
     volumes:
-      - ./mongo:/data/db
+      - ./database:/data/db
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=$MONGO_USERNAME
-      - MONGO_INITDB_ROOT_PASSWORD=$MONGO_PASSWORD
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=$MSSQL_PASSWORD
     networks:
       - docker_default
   api:
     build:
       context: ./api
     depends_on:
-      - mongo
+      - database
     ports:
       - "$API_PORT:3000"
     volumes:
@@ -314,9 +315,9 @@ services:
       - ./storage:/app/storage
     environment:
       - NODE_ENV=$NODE_ENV
-      - MONGO_URL=$GATEWAY:$MONGO_PORT
-      - MONGO_USERNAME=$MONGO_USERNAME
-      - MONGO_PASSWORD=$MONGO_PASSWORD
+      - MSSQL_URL=$GATEWAY:$MSSQL_PORT
+      - MSSQL_USERNAME=sa
+      - MSSQL_PASSWORD=$MSSQL_PASSWORD
     env_file:
       - ./.env.$PROGNAME
     networks:
