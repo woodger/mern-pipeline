@@ -238,7 +238,6 @@ fi
 
 cat << EOF > ./.env.$PROGNAME
 NODE_ENV=$NODE_ENV
-MSSQL_USERNAME=sa
 EOF
 
 if [[ -f $ENV_FILE ]]; then
@@ -297,7 +296,7 @@ services:
     ports:
       - "$MSSQL_PORT:1433"
     volumes:
-      - ./mssql:/data/db
+      # - ./mssql:/data/db
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=$MSSQL_PASSWORD
