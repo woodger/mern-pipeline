@@ -4,9 +4,9 @@
 
 The Pipeline is an open-source framework for run SOA applications in MERN stack.
 
-MERN (MongoDB, Express.js, React.js, Node.js) stack. Service-oriented architecture general purpose APIs that provide CRUD access to data via `http`.
+MERN (Microsoft SQL Server, Express.js, React.js, Node.js) stack. Service-oriented architecture general purpose APIs that provide CRUD access to data via `http`.
 
-![yuml diagram](http://yuml.me/diagram/scruffy;dir:LR/class/[Nginx]->[Api{bg:yellowgreen}],[Nginx]->[Web{bg:yellow}],[Api]->[Database],[Api]->[Storage{bg:lightsteelblue}])
+![yuml diagram](http://yuml.me/diagram/scruffy;dir:LR/class/[Nginx]->[api|Express{bg:yellowgreen}],[Nginx]->[web|React{bg:yellow}],[api|Express]->[mssql|SQL_Server],[api|Express]->[Storage{bg:lightsteelblue}])
 
 ## Getting Started
 
@@ -43,11 +43,11 @@ Options:
   --branch            Specify source git branch
   --api-repository    Remote or local the Api service repository
   --web-repository    Remote or local the Web service repository
-  --mongo-username    (Default: admin) Create a new user and set that
+  --mssql-username    (Default: admin) Create a new user and set that
                       user's password. This user is created in
                       the admin authentication database and given
                       the role of root, which is a superuser role
-  --mongo-password    Use than 8 digits passphrase
+  --mssql-password    Use than 8 digits passphrase
                       Even a long passphrase can be quite useless
                       if it is a regular word from a dictionary.
                       Randomize letters, numbers, and symbols mixing
