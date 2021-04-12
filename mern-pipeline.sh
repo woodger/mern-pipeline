@@ -236,10 +236,6 @@ if [[ ! $ENV_FILE ]] && [[ -f ./.env ]]; then
   ENV_FILE=./.env
 fi
 
-cat << EOF > ./.env.$PROGNAME
-NODE_ENV=$NODE_ENV
-EOF
-
 if [[ -f $ENV_FILE ]]; then
   cat $ENV_FILE >> ./.env.$PROGNAME
 fi
@@ -313,7 +309,6 @@ services:
       - ./ca-certificates:/usr/local/share/ca-certificates
       - ./storage:/app/storage
     environment:
-      - NODE_ENV=$NODE_ENV
       - MSSQL_URL=$GATEWAY:$MSSQL_PORT
       - MSSQL_USERNAME=sa
       - MSSQL_PASSWORD=$MSSQL_PASSWORD
