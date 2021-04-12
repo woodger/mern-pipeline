@@ -296,8 +296,7 @@ services:
     ports:
       - "$MSSQL_PORT:1433"
     volumes:
-      - ./mssql/data:/var/opt/mssql/data
-      - ./mssql/secrets:/var/opt/mssql/secrets
+      - ./mssql:/var/opt/mssql
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=$MSSQL_PASSWORD
