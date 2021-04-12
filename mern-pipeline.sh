@@ -272,6 +272,16 @@ server {
 }
 EOF
 
+# mssql:
+#   image: mcr.microsoft.com/mssql/server
+#   ports:
+#     - "$MSSQL_PORT:1433"
+#   environment:
+#     - ACCEPT_EULA=Y
+#     - SA_PASSWORD=$MSSQL_PASSWORD
+#   networks:
+#     - docker_default
+
 cat << EOF > ./docker-compose.yml
 version: "3.3"
 services:
@@ -288,12 +298,12 @@ services:
     networks:
       - docker_default
   mssql:
-    image: mcr.microsoft.com/mssql/server
+    image: postgres
     ports:
-      - "$MSSQL_PORT:1433"
+      - "$MSSQL_PORT:5432"
     environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=$MSSQL_PASSWORD
+      - POSTGRES_USER=$MSSQL_USERNAME
+      - POSTGRES_PASSWORD=$MSSQL_PASSWORD
     networks:
       - docker_default
   api:
