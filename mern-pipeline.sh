@@ -88,7 +88,7 @@ API_REPOSITORY=
 WEB_PORT=$(freeport)
 WEB_REPOSITORY=
 MSSQL_PORT=$(freeport)
-MSSQL_USERNAME="admin"
+MSSQL_USERNAME="sa"
 MSSQL_PASSWORD=
 
 if [[ $? != 0 ]]; then
@@ -272,16 +272,6 @@ server {
 }
 EOF
 
-# mssql:
-#   image: mcr.microsoft.com/mssql/server
-#   ports:
-#     - "$MSSQL_PORT:1433"
-#   environment:
-#     - ACCEPT_EULA=Y
-#     - SA_PASSWORD=$MSSQL_PASSWORD
-#   networks:
-#     - docker_default
-
 cat << EOF > ./docker-compose.yml
 version: "3.3"
 services:
@@ -297,13 +287,14 @@ services:
       - ./storage:/var/storage
     networks:
       - docker_default
+
   mssql:
-    image: postgres
+    image: mcr.microsoft.com/mssql/server
     ports:
-      - "$MSSQL_PORT:5432"
+      - "$MSSQL_PORT:1433"
     environment:
-      - POSTGRES_USER=$MSSQL_USERNAME
-      - POSTGRES_PASSWORD=$MSSQL_PASSWORD
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=$MSSQL_PASSWORD
     networks:
       - docker_default
   api:
@@ -318,9 +309,9 @@ services:
       - ./storage:/app/storage
     environment:
       - MSSQL_URL=$GATEWAY:$MSSQL_PORT
-      - MSSQL_DATABASE=master
-      - MSSQL_USERNAME=sa
+      - MSSQL_USERNAME=$MSSQL_USERNAME
       - MSSQL_PASSWORD=$MSSQL_PASSWORD
+      - MSSQL_DATABASE=master
     env_file:
       - ./.env.$PROGNAME
     networks:
