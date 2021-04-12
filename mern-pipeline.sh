@@ -310,6 +310,7 @@ services:
       - ./storage:/app/storage
     environment:
       - MSSQL_URL=$GATEWAY:$MSSQL_PORT
+      - MSSQL_DATABASE=master
       - MSSQL_USERNAME=sa
       - MSSQL_PASSWORD=$MSSQL_PASSWORD
     env_file:
