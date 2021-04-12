@@ -204,16 +204,16 @@ if [[ ! $WEB_REPOSITORY ]]; then
   exit 1
 fi
 
-mkdir -p ./{nginx,database}
+mkdir -p ./{nginx,mssql}
 
 if [[ ! $MSSQL_PASSWORD ]]; then
-  MSSQL_PASSWORD=$(signand ./database/database.srl)
+  MSSQL_PASSWORD=$(signand ./mssql/mssql.srl)
 fi
 
 if [[ $1 == "reload" ]]; then
   API_PORT=$(forwardport api 3000)
   WEB_PORT=$(forwardport web 3000)
-  MSSQL_PORT=$(forwardport database 1433)
+  MSSQL_PORT=$(forwardport mssql 1433)
 fi
 
 for item in ./api ./web; do
@@ -292,12 +292,12 @@ services:
       - ./storage:/var/storage
     networks:
       - docker_default
-  database:
-    image: mssql
+  mssql:
+    image: mcr.microsoft.com/mssql/server
     ports:
       - "$MSSQL_PORT:1433"
     volumes:
-      - ./database:/data/db
+      - ./mssql:/data/db
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=$MSSQL_PASSWORD
@@ -307,7 +307,7 @@ services:
     build:
       context: ./api
     depends_on:
-      - database
+      - mssql
     ports:
       - "$API_PORT:3000"
     volumes:
