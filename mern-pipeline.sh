@@ -76,6 +76,8 @@ function signand {
   cat $1
 }
 
+BIN_PATH=$(readlink $0)
+PROGNAME_CWD=$(dirname $BIN_PATH)
 GETOPT_ARGS=$(getopt -o hvdp -l "help","version","subnet:","port:","env-file:","branch:","api-repository:","web-repository:","mssql-username:","mssql-password:" -n "$PROGNAME" -- "$@")
 
 MODE=
@@ -244,6 +246,11 @@ fi
 
 cat ./.env.$PROGNAME >> ./web/.env
 
+# Fix
+# SQL Server 2019 will run as non-root by default docker
+
+useradd -M -s /bin/bash -u 10001 -g 0 mssql
+
 cat << EOF > ./nginx/nginx.conf
 server {
   listen 80;
@@ -291,7 +298,8 @@ services:
       - docker_default
 
   mssql:
-    image: mcr.microsoft.com/mssql/server
+    build:
+      context: $PROGNAME_CWD/mssql-non-root
     ports:
       - "$MSSQL_PORT:1433"
     environment:
