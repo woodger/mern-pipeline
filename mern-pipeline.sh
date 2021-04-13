@@ -35,11 +35,11 @@ function usage {
   echo "  --branch            Specify source git branch"
   echo "  --api-repository    Remote or local the Api service repository"
   echo "  --web-repository    Remote or local the Web service repository"
-  echo "  --db-username       (Default: admin) Create a new user and set that"
+  echo "  --mssql-username    (Default: admin) Create a new user and set that"
   echo "                      user's password. This user is created in"
   echo "                      the admin authentication database and given"
   echo "                      the role of root, which is a superuser role"
-  echo "  --db-password       Use than 8 digits passphrase"
+  echo "  --mssql-password    Use than 8 digits passphrase"
   echo "                      Even a long passphrase can be quite useless"
   echo "                      if it is a regular word from a dictionary."
   echo "                      Randomize letters, numbers, and symbols mixing"
@@ -76,7 +76,7 @@ function signand {
   cat $1
 }
 
-GETOPT_ARGS=$(getopt -o hvdp -l "help","version","subnet:","port:","env-file:","branch:","api-repository:","web-repository:","db-username:","db-password:" -n "$PROGNAME" -- "$@")
+GETOPT_ARGS=$(getopt -o hvdp -l "help","version","subnet:","port:","env-file:","branch:","api-repository:","web-repository:","mssql-username:","mssql-password:" -n "$PROGNAME" -- "$@")
 
 MODE=
 SUBNET="10.0.0.0/24"
@@ -142,12 +142,12 @@ while :; do
       WEB_REPOSITORY=$1
       shift
       ;;
-    --db-username)
+    --mssql-username)
       shift
       MSSQL_USERNAME=$1
       shift
       ;;
-    --db-password)
+    --mssql-password)
       shift
       MSSQL_PASSWORD=$1
       shift
