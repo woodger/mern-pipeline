@@ -7,7 +7,7 @@
 #   basename
 #   lsof
 
-VERSION=3.5.10
+VERSION=3.5.11
 PROGNAME=$(basename $0)
 
 function usage {
@@ -297,6 +297,8 @@ services:
       context: $PROGNAME_CWD/mssql-non-root
     ports:
       - "$MSSQL_PORT:1433"
+    volumes:
+      - ./mssql:/var/opt/mssql
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=$MSSQL_PASSWORD
