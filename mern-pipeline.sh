@@ -240,7 +240,9 @@ if [[ -f $ENV_FILE ]]; then
   cat $ENV_FILE >> ./.env.$PROGNAME
 fi
 
-cat ./.env.$PROGNAME >> ./web/.env
+if [[ -f ./.env.$PROGNAME ]]; then
+  cat ./.env.$PROGNAME >> ./web/.env
+fi
 
 cat << EOF > ./nginx/nginx.conf
 server {
