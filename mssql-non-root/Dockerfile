@@ -6,7 +6,7 @@ FROM mcr.microsoft.com/mssql/server
 
 # Create non-root user and update permissions
 #
-RUN useradd -M -s /bin/bash -u 10001 -g 0 mssql
+# RUN useradd -M -s /bin/bash -u 10001 -g 0 mssql
 RUN mkdir -p -m 770 /var/opt/mssql && chgrp -R 0 /var/opt/mssql
 
 # Grant sql the permissions to connect to ports <1024 as a non-root user
