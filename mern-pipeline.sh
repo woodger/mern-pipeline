@@ -246,11 +246,6 @@ fi
 
 cat ./.env.$PROGNAME >> ./web/.env
 
-# Fix
-# SQL Server 2019 will run as non-root by default docker
-
-useradd -M -s /bin/bash -u 10001 -g 0 mssql
-
 cat << EOF > ./nginx/nginx.conf
 server {
   listen 80;
