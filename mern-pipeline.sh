@@ -236,13 +236,13 @@ if [[ ! $ENV_FILE ]] && [[ -f ./.env ]]; then
   ENV_FILE=./.env
 fi
 
+touch ./.env.$PROGNAME
+
 if [[ -f $ENV_FILE ]]; then
   cat $ENV_FILE >> ./.env.$PROGNAME
 fi
 
-if [[ -f ./.env.$PROGNAME ]]; then
-  cat ./.env.$PROGNAME >> ./web/.env
-fi
+cat ./.env.$PROGNAME >> ./web/.env
 
 cat << EOF > ./nginx/nginx.conf
 server {
