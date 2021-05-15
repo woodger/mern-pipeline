@@ -7,7 +7,7 @@
 #   basename
 #   lsof
 
-VERSION=3.5.11
+VERSION=3.5.12
 PROGNAME=$(basename $0)
 
 function usage {
@@ -19,7 +19,7 @@ function usage {
   echo "The DIR parameter is a build’s context"
   echo
   echo "Commands:"
-  echo "  start               Create and start containers"
+  echo "  up                  Create and start containers"
   echo "  stop                Stop services"
   echo "  reload              Hot reload all services less change ports"
   echo
@@ -45,10 +45,6 @@ function usage {
   echo "                      Randomize letters, numbers, and symbols mixing"
   echo "                      in the uppercase letters in your otherwise"
   echo "                      lowercase passphrase and vice versa."
-  echo
-  echo "Examples:"
-  echo "  sh "$PROGNAME" start -p 8080 /app"
-  echo "  sh "$PROGNAME" stop /app"
 }
 
 function freeport {
@@ -343,7 +339,13 @@ networks:
       - subnet: $SUBNET
 EOF
 
-if [[ $1 == "start" ]] || [[ $1 == "reload" ]]; then
+if [[ $1 == "up" ]]; then
+  docker-compose up --build $MODE
+  exit
+fi
+
+if [[ $1 == "reload" ]]; then
+  docker-compose stop
   docker-compose up --build $MODE
   exit
 fi

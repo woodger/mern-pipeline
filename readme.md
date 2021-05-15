@@ -53,24 +53,9 @@ Options:
                       Randomize letters, numbers, and symbols mixing
                       in the uppercase letters in your otherwise
                       lowercase passphrase and vice versa.
-
-Examples:
-  sh mern-pipeline.sh start -p 8080 /app
-  sh mern-pipeline.sh stop /app
 ```
 
 ### Configuration options
-
-#### NODE_ENV
-
-Setting and reading the `NODE_ENV` environment variable. For this, before starting the Pipeline, you need to add an export `NODE_ENV` using shell variable.
-
-```sh
-NODE_ENV=development sh mern-pipeline.sh up \
-  --api-repository https://github.com/<api> \
-  --web-repository https://github.com/<web> \
-  /app
-```
 
 #### Port
 
@@ -104,25 +89,4 @@ Displays help and usage instructions.
 
 ```sh
 sh mern-pipeline.sh --help
-```
-
-### Unit service
-
-You can added the MERN Pipeline in [systemd.service(5)](https://man7.org/linux/man-pages/man5/systemd.service.5.html). For this copy `mern-pipeline.service` repository located in `/etc/systemd/system/` Unix like system.
-Current user need `root` permission.
-
-```sh
-cp ./templates/mern-pipeline.service /etc/systemd/system/<example.com>.service
-```
-
-Next edit service file using any text editor. After installing new generators or updating the configuration, `systemctl daemon-reload` may be executed.
-
-```sh
-systemctl daemon-reload
-```
-
-Now try run you application in pipeline production.
-
-```sh
-systemctl start <example.com>.service
 ```
