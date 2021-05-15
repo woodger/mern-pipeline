@@ -7,7 +7,7 @@
 #   basename
 #   lsof
 
-VERSION=3.5.12
+VERSION=3.5.13
 PROGNAME=$(basename $0)
 
 function usage {
@@ -340,13 +340,14 @@ networks:
 EOF
 
 if [[ $1 == "up" ]]; then
-  docker-compose up --build $MODE
+  docker-compose build
+  docker-compose run --restart unless-stopped $MODE
   exit
 fi
 
 if [[ $1 == "reload" ]]; then
   docker-compose stop
-  docker-compose up --build $MODE
+  docker-compose run --restart unless-stopped $MODE
   exit
 fi
 
