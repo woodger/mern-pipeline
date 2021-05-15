@@ -7,7 +7,7 @@
 #   basename
 #   lsof
 
-VERSION=3.5.13
+VERSION=3.5.14
 PROGNAME=$(basename $0)
 
 function usage {
@@ -277,6 +277,7 @@ version: "3.3"
 services:
   nginx:
     image: nginx
+    restart: unless-stopped
     depends_on:
       - web
     ports:
@@ -291,6 +292,7 @@ services:
   mssql:
     build:
       context: $PROGNAME_CWD/mssql-non-root
+    restart: unless-stopped
     ports:
       - "$MSSQL_PORT:1433"
     volumes:
@@ -303,6 +305,7 @@ services:
   api:
     build:
       context: ./api
+    restart: unless-stopped
     depends_on:
       - mssql
     ports:
@@ -322,6 +325,7 @@ services:
   web:
     build:
       context: ./web
+    restart: unless-stopped
     depends_on:
       - api
     ports:
@@ -340,14 +344,13 @@ networks:
 EOF
 
 if [[ $1 == "up" ]]; then
-  docker-compose build
-  docker-compose run --restart unless-stopped $MODE
+  docker-compose up --build $MODE
   exit
 fi
 
 if [[ $1 == "reload" ]]; then
   docker-compose stop
-  docker-compose run --restart unless-stopped $MODE
+  docker-compose up --build $MODE
   exit
 fi
 
